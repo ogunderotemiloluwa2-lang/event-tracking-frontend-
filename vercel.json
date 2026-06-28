@@ -1,0 +1,9 @@
+{
+  "buildCommand": "echo 'Pre-built — skipping build'",
+  "outputDirectory": "build",
+  "installCommand": "echo 'Pre-built — skipping install'",
+  "framework": "create-react-app",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

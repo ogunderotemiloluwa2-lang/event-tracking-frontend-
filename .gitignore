@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Production / build output
+dist/
+
+# Local env overrides (keep secrets/local-only out of git)
+# Note: .env.production IS committed (public API URL, needed for the Netlify build).
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Stray / OS / editor
+nul
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+npm-debug.log*

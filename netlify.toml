@@ -1,0 +1,10 @@
+# Netlify build configuration — no build needed, pre-built files in /build
+[build]
+  command = "echo 'Pre-built — skipping npm install and build'"
+  publish = "build"
+
+# SPA fallback: serve index.html for any path (also covered by public/_redirects).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
