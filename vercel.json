@@ -1,8 +1,8 @@
 {
-  "buildCommand": null,
+  "buildCommand": "CI=false npm run build",
   "outputDirectory": "build",
-  "installCommand": null,
-  "framework": null,
+  "installCommand": "npm install",
+  "framework": "create-react-app",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
