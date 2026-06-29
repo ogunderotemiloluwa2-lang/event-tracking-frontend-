@@ -1,0 +1,85 @@
+<svg width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFB84D;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#D97706;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#92400E;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="light1" cx="30%" cy="30%">
+      <stop offset="0%" style="stop-color:#FFA500;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Main gradient background -->
+  <rect width="600" height="400" fill="url(#mainGrad)"/>
+  <rect width="600" height="400" fill="url(#light1)"/>
+  
+  <!-- Light overlay circles for depth -->
+  <circle cx="150" cy="100" r="120" fill="#FFD89B" opacity="0.15"/>
+  <circle cx="450" cy="300" r="150" fill="#FFA500" opacity="0.1"/>
+  
+  <!-- People silhouettes in celebratory poses -->
+  <!-- Person 1 - Left -->
+  <g transform="translate(100, 120)">
+    <circle cx="0" cy="-30" r="18" fill="#1a1a1a" opacity="0.8"/>
+    <rect x="-14" y="-8" width="28" height="50" rx="6" fill="#2d2d2d" opacity="0.85"/>
+    <!-- Left arm up -->
+    <rect x="-22" y="-15" width="10" height="45" rx="5" fill="#1a1a1a" opacity="0.8" transform="rotate(-35 -17 15)"/>
+    <!-- Right arm up -->
+    <rect x="12" y="-15" width="10" height="45" rx="5" fill="#1a1a1a" opacity="0.8" transform="rotate(40 17 15)"/>
+    <!-- Legs -->
+    <rect x="-10" y="42" width="8" height="28" rx="4" fill="#1a1a1a" opacity="0.85"/>
+    <rect x="2" y="42" width="8" height="28" rx="4" fill="#1a1a1a" opacity="0.85"/>
+  </g>
+  
+  <!-- Person 2 - Center (taller) -->
+  <g transform="translate(300, 100)">
+    <circle cx="0" cy="-35" r="20" fill="#1a1a1a" opacity="0.9"/>
+    <rect x="-16" y="-10" width="32" height="58" rx="7" fill="#2d2d2d" opacity="0.9"/>
+    <!-- Both arms raised in V -->
+    <rect x="-24" y="-18" width="10" height="55" rx="5" fill="#1a1a1a" opacity="0.85" transform="rotate(-40 -19 20)"/>
+    <rect x="14" y="-18" width="10" height="55" rx="5" fill="#1a1a1a" opacity="0.85" transform="rotate(45 19 20)"/>
+    <!-- Legs -->
+    <rect x="-12" y="48" width="9" height="32" rx="4" fill="#1a1a1a" opacity="0.9"/>
+    <rect x="3" y="48" width="9" height="32" rx="4" fill="#1a1a1a" opacity="0.9"/>
+  </g>
+  
+  <!-- Person 3 - Right -->
+  <g transform="translate(480, 130)">
+    <circle cx="0" cy="-28" r="17" fill="#1a1a1a" opacity="0.8"/>
+    <rect x="-13" y="-6" width="26" height="46" rx="6" fill="#2d2d2d" opacity="0.85"/>
+    <!-- Left arm up -->
+    <rect x="-20" y="-12" width="9" height="42" rx="4" fill="#1a1a1a" opacity="0.8" transform="rotate(-30 -15.5 18)"/>
+    <!-- Right arm up -->
+    <rect x="11" y="-12" width="9" height="42" rx="4" fill="#1a1a1a" opacity="0.8" transform="rotate(35 15.5 18)"/>
+    <!-- Legs -->
+    <rect x="-10" y="40" width="8" height="26" rx="4" fill="#1a1a1a" opacity="0.85"/>
+    <rect x="2" y="40" width="8" height="26" rx="4" fill="#1a1a1a" opacity="0.85"/>
+  </g>
+  
+  <!-- Confetti/celebration elements -->
+  <rect x="80" y="60" width="12" height="12" fill="#FFF8DC" opacity="0.7" transform="rotate(45 86 66)"/>
+  <rect x="200" y="50" width="10" height="10" fill="#FFEBCD" opacity="0.6" transform="rotate(30 205 55)"/>
+  <circle cx="380" cy="70" r="6" fill="#FFF8DC" opacity="0.65"/>
+  <rect x="480" y="75" width="11" height="11" fill="#FFEBCD" opacity="0.7" transform="rotate(60 485.5 80.5)"/>
+  <circle cx="120" cy="85" r="5" fill="#FFECB3" opacity="0.6"/>
+  
+  <!-- Event elements - QR code suggestion -->
+  <g transform="translate(50, 280)">
+    <rect x="0" y="0" width="60" height="60" fill="white" opacity="0.15" rx="4"/>
+    <text x="30" y="40" font-size="20" fill="white" opacity="0.3" text-anchor="middle" font-weight="bold">QR</text>
+  </g>
+  
+  <!-- Attendee icon suggestion -->
+  <g transform="translate(520, 280)">
+    <circle cx="30" cy="20" r="8" fill="white" opacity="0.2"/>
+    <path d="M 20 35 Q 30 30 40 35" stroke="white" stroke-width="2" fill="none" opacity="0.2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Decorative lines -->
+  <line x1="0" y1="220" x2="600" y2="220" stroke="white" stroke-width="1" opacity="0.1"/>
+  
+  <!-- Text overlay -->
+  <text x="300" y="360" font-size="28" fill="white" text-anchor="middle" font-weight="bold" opacity="0.9">Event Management Made Easy</text>
+</svg>
