@@ -7714,31 +7714,34 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 .auth-visual { display: none; }
 
 @media (min-width: 1024px) {
-  /* Two-column split: form fills the first half, photo the (slightly bigger) other half. */
+  /* Full-screen two-pane split: form takes 40% of the width, photo takes 60%. */
   .app .auth-page.auth-page--split {
     display: grid;
-    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-    align-items: center;
-    gap: clamp(2rem, 4vw, 4rem);
-    max-width: 1260px;
-    margin-inline: auto;
-    padding-block: 3rem;
+    grid-template-columns: 40% 60%;
+    align-items: stretch;
+    gap: 0;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
   }
   .app .auth-page.auth-page--split .auth-card {
     width: 100%;
-    max-width: 28rem;
-    justify-self: end;   /* nudge the form toward the centre seam */
-    margin: 0;
+    max-width: 27rem;
+    justify-self: center;   /* centre the form within its 40% column */
+    align-self: center;
+    margin: 0 auto;
   }
 
   .auth-page--split .auth-visual {
     display: block;
     position: relative;
     align-self: stretch;
-    min-height: 640px;
-    border-radius: 22px;
+    min-height: 100vh;       /* image fills the full height of the screen */
+    border-radius: 0;        /* edge-to-edge, no rounded corners */
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
+    box-shadow: none;
     background:
       linear-gradient(180deg, rgba(20, 16, 13, 0) 35%, rgba(20, 16, 13, 0.82) 100%),
       url('./auth-hero.jpg') center / cover no-repeat,
