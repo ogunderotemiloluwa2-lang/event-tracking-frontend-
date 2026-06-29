@@ -29,7 +29,6 @@ function Attendee({ user, onNavigate }) {
       <div className="attendee-container">
         <div className="attendee-content">
           <div className="step-container pass-step">
-            <div className="step-icon">🎟️</div>
             <h1>Join an Event</h1>
             <p className="step-description">Enter your event pass to see details and register</p>
 
@@ -57,7 +56,7 @@ function Attendee({ user, onNavigate }) {
 
             <div className="divider">or</div>
             <button type="button" className="btn-secondary-large" disabled>
-              📱 Scan QR Code (Coming soon)
+              Scan QR Code (Coming soon)
             </button>
 
             <div className="help-section">

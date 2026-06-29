@@ -67,7 +67,7 @@ function Dashboard({ user, onNavigate }) {
       // If the browser blocked the popup, window.open returns null. Without this
       // guard the spinner would stay on "Connecting…" forever with no explanation.
       if (!popup) {
-        setDriveMessage('⚠️ Your browser blocked the Google sign-in popup. Allow popups for this site and click "Connect Google Drive" again.');
+        setDriveMessage('Your browser blocked the Google sign-in popup. Allow popups for this site and click "Connect Google Drive" again.');
         setConnectingDrive(false);
         return;
       }
@@ -79,7 +79,7 @@ function Dashboard({ user, onNavigate }) {
         try {
           await saveGoogleToken(user.id, accessToken, refreshToken);
           setDriveConnected(true);
-          setDriveMessage('✅ Google Drive connected! Guest photos will now upload to your Drive.');
+          setDriveMessage('Google Drive connected! Guest photos will now upload to your Drive.');
         } catch (err) {
           setDriveMessage('Failed to save Google Drive connection: ' + (err.response?.data?.message || err.message));
         } finally {
@@ -176,7 +176,7 @@ function Dashboard({ user, onNavigate }) {
             <p className="subtitle">Create and manage events effortlessly</p>
           </div>
           <button className="btn-create-hero" onClick={() => setShowForm(!showForm)}>
-            {showForm ? '✕ Cancel' : '+ New Event'}
+            {showForm ? 'Cancel' : 'New Event'}
           </button>
         </div>
       </section>
@@ -190,18 +190,43 @@ function Dashboard({ user, onNavigate }) {
             <p className="email">{user?.email}</p>
             <p className="cloud-status">
               {driveConnected
-                ? '✅ Google Drive connected — guest photos upload to your Drive'
-                : '⚠️ Google Drive not connected — connect it so guest photos can be saved'}
+                ? 'Google Drive connected — guest photos upload to your Drive'
+                : 'Google Drive not connected — connect it so guest photos can be saved'}
             </p>
             {!driveConnected && (
-              <button
-                className="btn-primary"
-                onClick={handleConnectDrive}
-                disabled={connectingDrive}
-                style={{ marginTop: '8px' }}
-              >
-                {connectingDrive ? 'Connecting…' : '🔗 Connect Google Drive'}
-              </button>
+              <>
+                <button
+                  className="btn-primary"
+                  onClick={handleConnectDrive}
+                  disabled={connectingDrive}
+                  style={{ marginTop: '8px' }}
+                >
+                  {connectingDrive ? 'Connecting…' : 'Connect Google Drive'}
+                </button>
+
+                {/* Plain-language walk-through of the Google screens, so even a
+                    first-time user knows exactly what to expect and tap. */}
+                <div className="drive-help">
+                  <p className="drive-help-title">What happens when you click connect:</p>
+                  <ol className="drive-help-steps">
+                    <li>A Google window opens. Choose the Google account where you want guest photos saved.</li>
+                    <li>
+                      Google may show a screen that says
+                      <strong> “Google hasn’t verified this app.”</strong> This is normal for
+                      private apps. Click <strong>Advanced</strong>, then click
+                      <strong> “Go to EventFlow (unsafe)”</strong> — it is safe; this only
+                      means the app is still under review.
+                    </li>
+                    <li>
+                      On the next screen Google asks if you trust EventFlow with your Drive.
+                      Click <strong>Continue</strong> / <strong>Allow</strong>. This lets
+                      EventFlow save your guests’ event photos into your own Drive — nothing
+                      else, and you can disconnect any time from your Google account.
+                    </li>
+                    <li>The window closes by itself and you’ll see “connected” here.</li>
+                  </ol>
+                </div>
+              </>
             )}
             {driveMessage && (
               <p className="cloud-status" style={{ marginTop: '8px' }}>{driveMessage}</p>
@@ -213,21 +238,18 @@ function Dashboard({ user, onNavigate }) {
       <section className="dashboard-container">
         <div className="stats-column">
           <div className="stat-card">
-            <div className="stat-icon">👥</div>
             <div className="stat-content">
               <div className="stat-number">{stats.total}</div>
               <div className="stat-label">Total Attendees</div>
             </div>
           </div>
           <div className="stat-card highlight">
-            <div className="stat-icon">✓</div>
             <div className="stat-content">
               <div className="stat-number">{stats.confirmed}</div>
               <div className="stat-label">Confirmed</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">📸</div>
             <div className="stat-content">
               <div className="stat-number">{stats.photos}</div>
               <div className="stat-label">Photos</div>
@@ -401,9 +423,9 @@ function Dashboard({ user, onNavigate }) {
                     onChange={handleInputChange}
                   />
                   <small style={{ color: '#666', marginTop: '0.5rem', display: 'block' }}>
-                    📁 All photos will be uploaded directly to this Google Drive folder. 
-                    <br/>🔗 Create a folder in Google Drive → Share it (Anyone with the link) → Paste the link here
-                    <br/>✨ Photos go DIRECTLY to your Drive - never stored on our servers!
+                    All photos will be uploaded directly to this Google Drive folder.
+                    <br/>Create a folder in Google Drive, share it (Anyone with the link), then paste the link here.
+                    <br/>Photos go directly to your Drive — never stored on our servers.
                   </small>
                 </div>
               </div>
@@ -418,7 +440,6 @@ function Dashboard({ user, onNavigate }) {
           <div className="events-list">
             {events.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">📅</div>
                 <h3>No events yet</h3>
                 <p>Create your first event to get started</p>
               </div>
@@ -438,11 +459,9 @@ function Dashboard({ user, onNavigate }) {
 
                   <div className="event-card-info">
                     <div className="info-item">
-                      <span className="icon">📍</span>
                       <span>{event.location}</span>
                     </div>
                     <div className="info-item">
-                      <span className="icon">🕐</span>
                       <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
@@ -482,7 +501,7 @@ function Dashboard({ user, onNavigate }) {
                         handleNavigation('attendee-management', { event });
                       }}
                     >
-                      👥 Manage Attendees
+                      Manage Attendees
                     </button>
                     <button 
                       className="btn-action"
@@ -491,7 +510,7 @@ function Dashboard({ user, onNavigate }) {
                         handleNavigation('checkin', { event });
                       }}
                     >
-                      ✅ Check-In
+                      Check-In
                     </button>
                     <button 
                       className="btn-action"
@@ -500,7 +519,7 @@ function Dashboard({ user, onNavigate }) {
                         handleNavigation('reminders', { event });
                       }}
                     >
-                      📧 Send Reminders
+                      Send Reminders
                     </button>
                     <button 
                       className="btn-action"
@@ -509,7 +528,7 @@ function Dashboard({ user, onNavigate }) {
                         handleNavigation('analytics', { event });
                       }}
                     >
-                      📊 Analytics
+                      Analytics
                     </button>
                   </div>
                 </div>

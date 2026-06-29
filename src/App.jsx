@@ -60,6 +60,17 @@ function App() {
   };
 
   const handleNavigation = (page, data = {}) => {
+    // Guard the two role-specific home pages so nobody can slip between the
+    // organizer and attendee experiences without being signed in for that role.
+    if (page === 'dashboard' && (!user || user.role !== 'organizer')) {
+      setCurrentPage(user ? 'attendee' : 'login');
+      return;
+    }
+    if (page === 'attendee' && (!user || user.role !== 'attendee')) {
+      setCurrentPage(user ? 'dashboard' : 'login');
+      return;
+    }
+
     if (page === 'verify-code' || page === 'reset-password') {
       setResetData(data);
     }
@@ -239,11 +250,11 @@ function App() {
           <nav className="app-nav">
             <div className="nav-brand">EventFlow</div>
             <div className="nav-menu">
-              {currentPage === 'gallery' && (
-                <>
-                  <button className="nav-link" onClick={() => handleNavigation('dashboard')}>Host Dashboard</button>
-                  <button className="nav-link" onClick={() => handleNavigation('attendee')}>Check In</button>
-                </>
+              {currentPage === 'gallery' && user?.role === 'organizer' && (
+                <button className="nav-link" onClick={() => handleNavigation('dashboard')}>Host Dashboard</button>
+              )}
+              {currentPage === 'gallery' && user?.role === 'attendee' && (
+                <button className="nav-link" onClick={() => handleNavigation('attendee')}>Check In</button>
               )}
               <button className="nav-link" onClick={handleBackToLanding}>Home</button>
             </div>

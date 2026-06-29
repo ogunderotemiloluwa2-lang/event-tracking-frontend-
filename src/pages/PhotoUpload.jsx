@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { uploadPhoto } from '../services/api';
 
 function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
@@ -11,6 +11,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
+  const streamRef = useRef(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [photoCaption, setPhotoCaption] = useState('');
@@ -18,27 +19,62 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const [uploaderEmail, setUploaderEmail] = useState('');
 
   const startCamera = async () => {
+    // getUserMedia only exists in a secure context (https:// or localhost).
+    // When a guest opens a shared link over plain http on their phone the API
+    // is simply missing, which previously left the button doing nothing.
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError('Your browser can’t open the camera here. This usually means the page isn’t on a secure (https) link. Use “Choose from Gallery” below, or open the link in Chrome/Safari over https.');
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
       });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsCameraActive(true);
-        setError('');
-      }
+      // Keep the stream in a ref and flip the flag so the <video> element gets
+      // rendered. The stream is attached in the effect below once it exists in
+      // the DOM — attaching here failed because videoRef wasn't mounted yet.
+      streamRef.current = stream;
+      setIsCameraActive(true);
+      setError('');
     } catch (err) {
-      setError('Unable to access camera. Please check permissions.');
       console.error('Camera error:', err);
+      if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+        setError('Camera permission was blocked. Allow camera access for this site in your browser settings, then try again — or use “Choose from Gallery”.');
+      } else if (err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
+        setError('No camera was found on this device. Use “Choose from Gallery” instead.');
+      } else {
+        setError('Unable to open the camera. Use “Choose from Gallery”, or check your browser camera permissions.');
+      }
     }
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setIsCameraActive(false);
   };
+
+  // Attach the live stream once the <video> element is actually on screen, and
+  // make sure the camera is released if the user leaves the page.
+  useEffect(() => {
+    if (isCameraActive && !capturedImage && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play?.().catch(() => {});
+    }
+  }, [isCameraActive, capturedImage]);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const capturePhoto = () => {
     if (videoRef.current && canvasRef.current) {
@@ -59,15 +95,32 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   };
 
   const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCapturedImage(reader.result);
-        setError('');
-      };
-      reader.readAsDataURL(file);
+    const file = e.target.files && e.target.files[0];
+    // Reset the input value so picking the SAME image again still fires onChange.
+    e.target.value = '';
+
+    if (!file) return;
+
+    if (!file.type || !file.type.startsWith('image/')) {
+      setError('That file isn’t an image. Please choose a photo (JPG, PNG, etc.).');
+      return;
     }
+
+    // Guard very large files so the upload doesn't silently fail on slow links.
+    if (file.size > 15 * 1024 * 1024) {
+      setError('That image is larger than 15 MB. Please choose a smaller photo.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCapturedImage(reader.result);
+      setError('');
+    };
+    reader.onerror = () => {
+      setError('Sorry, that image couldn’t be read. Please try another photo.');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUploadPhoto = async (e) => {

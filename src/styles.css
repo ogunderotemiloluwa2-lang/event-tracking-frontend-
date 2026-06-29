@@ -7196,6 +7196,34 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 .app .profile-info .email { color: var(--ds-ink-2); font-size: 0.9rem; }
 .app .profile-info .cloud-status { font-size: 0.88rem; color: var(--ds-ink-2); margin-top: 0.6rem; }
 
+/* Plain-language Google Drive consent walk-through under the connect button */
+.app .drive-help {
+  margin-top: 0.9rem;
+  padding: 0.95rem 1.1rem;
+  background: var(--ds-paper-2);
+  border: 1px solid var(--ds-line);
+  border-radius: 10px;
+  max-width: 560px;
+}
+.app .drive-help-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ds-ink);
+}
+.app .drive-help-steps {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.45rem;
+}
+.app .drive-help-steps li {
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: var(--ds-ink-2);
+}
+.app .drive-help-steps strong { color: var(--ds-ink); }
+
 .app .dashboard-container {
   max-width: 1120px; margin: 0 auto;
   padding: 0 clamp(1.25rem, 4vw, 2.5rem);
@@ -7686,19 +7714,19 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 .auth-visual { display: none; }
 
 @media (min-width: 1024px) {
-  /* Two-column layout: form on the left, visual on the right. */
+  /* Two-column split: form fills the first half, photo the (slightly bigger) other half. */
   .app .auth-page.auth-page--split {
     display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
     align-items: center;
-    gap: clamp(2.5rem, 5vw, 5.5rem);
-    max-width: 1180px;
+    gap: clamp(2rem, 4vw, 4rem);
+    max-width: 1260px;
     margin-inline: auto;
     padding-block: 3rem;
   }
   .app .auth-page.auth-page--split .auth-card {
     width: 100%;
-    max-width: 27rem;
+    max-width: 28rem;
     justify-self: end;   /* nudge the form toward the centre seam */
     margin: 0;
   }
@@ -7707,13 +7735,13 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
     display: block;
     position: relative;
     align-self: stretch;
-    min-height: 560px;
+    min-height: 640px;
     border-radius: 22px;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
     background:
-      linear-gradient(180deg, rgba(20, 16, 13, 0) 30%, rgba(20, 16, 13, 0.82) 100%),
-      url('./event-hero.svg') center / cover no-repeat,
+      linear-gradient(180deg, rgba(20, 16, 13, 0) 35%, rgba(20, 16, 13, 0.82) 100%),
+      url('./auth-hero.jpg') center / cover no-repeat,
       linear-gradient(135deg, #d97706, #92400e);
     animation: authVisualIn 0.6s var(--ds-ease) both;
   }
