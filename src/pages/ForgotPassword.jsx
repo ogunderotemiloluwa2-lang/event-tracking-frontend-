@@ -17,7 +17,7 @@ function ForgotPassword({ onBack, onNext }) {
       await forgotPassword(email);
       setSuccess('✓ Verification code sent! Check your email.');
       setTimeout(() => {
-        onNext && onNext('verify-code', email);
+        onNext && onNext('verify-code', { email });
       }, 2000);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to send reset code');

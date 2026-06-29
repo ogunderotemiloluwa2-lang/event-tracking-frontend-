@@ -48,7 +48,7 @@ function Login({ onLoggedIn, onBack, onNavigate }) {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-page--split">
       <div className="auth-card">
         <div className="auth-card-header">
           <button type="button" className="link-button compact" onClick={onBack}>
@@ -130,6 +130,21 @@ function Login({ onLoggedIn, onBack, onNavigate }) {
           </div>
         </form>
       </div>
+
+      {/* Desktop-only decorative panel — fills the empty space beside the form */}
+      <aside className="auth-visual" aria-hidden="true">
+        <div className="auth-visual-overlay">
+          <span className="auth-visual-brand">◆ EventFlow</span>
+          <div className="auth-visual-copy">
+            <h3 className="auth-visual-title">Welcome back to effortless events.</h3>
+            <ul className="auth-visual-points">
+              <li><span className="tick">✓</span> QR passes &amp; instant check-in</li>
+              <li><span className="tick">✓</span> Every guest photo in one shared gallery</li>
+              <li><span className="tick">✓</span> Live RSVPs &amp; attendance analytics</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

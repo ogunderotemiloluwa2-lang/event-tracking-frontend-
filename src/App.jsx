@@ -16,6 +16,15 @@ import VerifyCode from './pages/VerifyCode';
 import ResetPassword from './pages/ResetPassword';
 import EventDetails from './pages/EventDetails';
 
+// Pages safe to restore after a browser refresh. Sub-pages that need transient
+// state (a selected event, a pass id, reset data) are intentionally excluded so
+// a refresh on them falls back to a sensible home instead of crashing.
+const RESTORABLE_PAGES = new Set([
+  'landing', 'login', 'register', 'forgot-password',
+  'dashboard', 'attendee', 'gallery'
+]);
+const AUTH_REQUIRED_PAGES = new Set(['dashboard', 'attendee']);
+
 function App() {
   const [currentPage, setCurrentPage] = useState('landing');
   const [user, setUser] = useState(null);
@@ -26,10 +35,24 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
-      setUser(JSON.parse(localStorage.getItem('user')));
+    const savedUser = token ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+    if (savedUser) setUser(savedUser);
+
+    // Restore the page the user was on before refreshing, instead of dropping to landing.
+    const savedPage = localStorage.getItem('currentPage');
+    if (savedPage && RESTORABLE_PAGES.has(savedPage)) {
+      if (AUTH_REQUIRED_PAGES.has(savedPage) && !savedUser) {
+        setCurrentPage('landing');
+      } else {
+        setCurrentPage(savedPage);
+      }
     }
   }, []);
+
+  // Remember the current page so a browser refresh doesn't reset to landing.
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage);
+  }, [currentPage]);
 
   const handleRoleSelect = (role) => {
     localStorage.setItem('registerRole', role === 'host' ? 'organizer' : 'attendee');

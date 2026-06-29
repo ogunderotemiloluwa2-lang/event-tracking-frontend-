@@ -64,6 +64,14 @@ function Dashboard({ user, onNavigate }) {
 
       const popup = window.open(authUrl, 'google-drive-auth', 'width=600,height=700');
 
+      // If the browser blocked the popup, window.open returns null. Without this
+      // guard the spinner would stay on "Connecting…" forever with no explanation.
+      if (!popup) {
+        setDriveMessage('⚠️ Your browser blocked the Google sign-in popup. Allow popups for this site and click "Connect Google Drive" again.');
+        setConnectingDrive(false);
+        return;
+      }
+
       const handleMessage = async (event) => {
         if (!event.data || event.data.type !== 'google-auth-success') return;
         window.removeEventListener('message', handleMessage);

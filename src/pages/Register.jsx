@@ -59,7 +59,7 @@ function Register({ onRegistered, onBack, roleDefault }) {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-page--split">
       <div className="auth-card">
         <div className="auth-card-header">
           <button type="button" className="link-button compact" onClick={onBack}>
@@ -148,6 +148,21 @@ function Register({ onRegistered, onBack, roleDefault }) {
           {error && <div className="error-alert">{error}</div>}
         </form>
       </div>
+
+      {/* Desktop-only decorative panel — fills the empty space beside the form */}
+      <aside className="auth-visual" aria-hidden="true">
+        <div className="auth-visual-overlay">
+          <span className="auth-visual-brand">◆ EventFlow</span>
+          <div className="auth-visual-copy">
+            <h3 className="auth-visual-title">Everything you need to run great events.</h3>
+            <ul className="auth-visual-points">
+              <li><span className="tick">✓</span> Create events &amp; share a pass in seconds</li>
+              <li><span className="tick">✓</span> Collect guest photos straight to your Drive</li>
+              <li><span className="tick">✓</span> Track check-ins and RSVPs in real time</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
