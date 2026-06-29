@@ -6401,6 +6401,18 @@ body {
   padding: clamp(8rem, 14vw, 11rem) 0 clamp(4rem, 8vw, 7rem);
   border-bottom: 1px solid var(--line);
 }
+
+/* Desktop only: subtle photo wallpaper behind the hero section (just this
+   block — the rest of the page keeps the plain paper background). A strong
+   translucent paper overlay keeps the existing dark text fully readable. */
+@media (min-width: 1024px) {
+  .landing-page .lp-hero {
+    background:
+      linear-gradient(rgba(250, 248, 244, 0.9), rgba(250, 248, 244, 0.93)),
+      url('./landing-hero.jpg') center / cover no-repeat;
+    background-attachment: scroll;
+  }
+}
 .landing-page .lp-hero-grid {
   display: grid;
   grid-template-columns: 1.55fr 1fr;
@@ -7729,17 +7741,17 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
   .app .auth-page.auth-page--split .auth-card {
     width: 100%;
     max-width: 27rem;
-    justify-self: center;   /* centre the form within its 40% column */
-    align-self: center;
-    margin: 0 auto;
+    margin: auto;            /* centre the form in its 40% column; long forms scroll */
+    padding-block: clamp(1.8rem, 4vw, 2.6rem);
   }
 
   .auth-page--split .auth-visual {
     display: block;
-    position: relative;
-    align-self: stretch;
-    min-height: 100vh;       /* image fills the full height of the screen */
-    border-radius: 0;        /* edge-to-edge, no rounded corners */
+    position: sticky;        /* keep the photo full-height even when the form scrolls */
+    top: 0;
+    align-self: start;
+    height: 100vh;           /* image always exactly the screen height */
+    border-radius: 0;        /* edge-to-edge, flush against the form */
     overflow: hidden;
     box-shadow: none;
     background:
