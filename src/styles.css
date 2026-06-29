@@ -6397,20 +6397,28 @@ body {
 .landing-page .lp-sheet-actions .lp-btn { width: 100%; padding: 0.85rem; }
 
 /* ---------------- Hero ---------------- */
+/* Photo wallpaper behind the hero section only (all screen sizes). A
+   directional paper overlay — heavier on the left where the headline sits,
+   lighter on the right — keeps the dark text readable while letting the
+   photo show through clearly and stay well positioned. */
 .landing-page .lp-hero {
   padding: clamp(8rem, 14vw, 11rem) 0 clamp(4rem, 8vw, 7rem);
   border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(105deg,
+      rgba(250, 248, 244, 0.93) 0%,
+      rgba(250, 248, 244, 0.80) 50%,
+      rgba(250, 248, 244, 0.62) 100%),
+    url('./landing-hero.jpg') center 35% / cover no-repeat;
 }
 
-/* Desktop only: subtle photo wallpaper behind the hero section (just this
-   block — the rest of the page keeps the plain paper background). A strong
-   translucent paper overlay keeps the existing dark text fully readable. */
-@media (min-width: 1024px) {
+@media (max-width: 720px) {
+  /* On small screens the content stacks, so keep a slightly stronger, even
+     overlay so the headline and value strip stay readable over the photo. */
   .landing-page .lp-hero {
     background:
-      linear-gradient(rgba(250, 248, 244, 0.9), rgba(250, 248, 244, 0.93)),
+      linear-gradient(rgba(250, 248, 244, 0.86), rgba(250, 248, 244, 0.82)),
       url('./landing-hero.jpg') center / cover no-repeat;
-    background-attachment: scroll;
   }
 }
 .landing-page .lp-hero-grid {
@@ -7731,11 +7739,11 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
     display: grid;
     grid-template-columns: 40% 60%;
     align-items: stretch;
-    gap: 0;
+    gap: 1.5rem;
     max-width: none;
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 1.5rem;
     min-height: 100vh;
   }
   .app .auth-page.auth-page--split .auth-card {
@@ -7748,12 +7756,12 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
   .auth-page--split .auth-visual {
     display: block;
     position: sticky;        /* keep the photo full-height even when the form scrolls */
-    top: 0;
+    top: 1.5rem;
     align-self: start;
-    height: 100vh;           /* image always exactly the screen height */
-    border-radius: 0;        /* edge-to-edge, flush against the form */
+    height: calc(100vh - 3rem); /* full screen height minus the top/bottom gutter */
+    border-radius: 16px;     /* rounded corners, matching the form card */
     overflow: hidden;
-    box-shadow: none;
+    box-shadow: var(--shadow-lg);
     background:
       linear-gradient(180deg, rgba(20, 16, 13, 0) 35%, rgba(20, 16, 13, 0.82) 100%),
       url('./auth-hero.jpg') center / cover no-repeat,
