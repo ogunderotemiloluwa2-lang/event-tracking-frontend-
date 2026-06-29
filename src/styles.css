@@ -6397,29 +6397,34 @@ body {
 .landing-page .lp-sheet-actions .lp-btn { width: 100%; padding: 0.85rem; }
 
 /* ---------------- Hero ---------------- */
-/* Photo wallpaper behind the hero section only (all screen sizes). A
-   directional paper overlay — heavier on the left where the headline sits,
-   lighter on the right — keeps the dark text readable while letting the
-   photo show through clearly and stay well positioned. */
+/* Crisp photo wallpaper behind the hero section only (all screen sizes).
+   The photo is shown almost clear — just a faint wash to tie it to the theme,
+   no heavy fog. Text stays readable thanks to the frosted panels below, not by
+   blurring the whole image. */
 .landing-page .lp-hero {
   padding: clamp(8rem, 14vw, 11rem) 0 clamp(4rem, 8vw, 7rem);
   border-bottom: 1px solid var(--line);
   background:
-    linear-gradient(105deg,
-      rgba(250, 248, 244, 0.93) 0%,
-      rgba(250, 248, 244, 0.80) 50%,
-      rgba(250, 248, 244, 0.62) 100%),
+    linear-gradient(rgba(245, 242, 236, 0.18), rgba(245, 242, 236, 0.18)),
     url('./landing-hero.jpg') center 35% / cover no-repeat;
 }
 
-@media (max-width: 720px) {
-  /* On small screens the content stacks, so keep a slightly stronger, even
-     overlay so the headline and value strip stay readable over the photo. */
-  .landing-page .lp-hero {
-    background:
-      linear-gradient(rgba(250, 248, 244, 0.86), rgba(250, 248, 244, 0.82)),
-      url('./landing-hero.jpg') center / cover no-repeat;
-  }
+/* Frosted, readable backdrop behind the hero copy and the value strip — so the
+   surrounding photo stays sharp and clearly visible. */
+.landing-page .lp-hero .lp-hero-main,
+.landing-page .lp-hero .lp-value-strip {
+  background: rgba(250, 248, 244, 0.82);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -36px rgba(26, 22, 17, 0.45);
+}
+.landing-page .lp-hero .lp-hero-main {
+  padding: clamp(1.6rem, 3.2vw, 2.6rem);
+}
+.landing-page .lp-hero .lp-value-strip {
+  padding: 0.5rem 1.5rem 1.5rem;
 }
 .landing-page .lp-hero-grid {
   display: grid;
