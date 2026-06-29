@@ -6411,11 +6411,9 @@ body {
 }
 
 @media (max-width: 768px) {
-  /* Mobile: ~35% photo clarity (0.65 wash) — a touch blurrier. */
+  /* Mobile: remove the photo completely. */
   .landing-page .lp-hero {
-    background:
-      linear-gradient(rgba(245, 242, 236, 0.65), rgba(245, 242, 236, 0.65)),
-      url('./landing-hero.jpg') center 35% / cover no-repeat;
+    background: linear-gradient(135deg, #f5f2ec, #e8e2d6);
   }
 }
 
