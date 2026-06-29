@@ -6404,9 +6404,19 @@ body {
 .landing-page .lp-hero {
   padding: clamp(8rem, 14vw, 11rem) 0 clamp(4rem, 8vw, 7rem);
   border-bottom: 1px solid var(--line);
+  /* Desktop: ~45% photo clarity (0.55 wash). */
   background:
-    linear-gradient(rgba(245, 242, 236, 0.42), rgba(245, 242, 236, 0.42)),
+    linear-gradient(rgba(245, 242, 236, 0.55), rgba(245, 242, 236, 0.55)),
     url('./landing-hero.jpg') center 35% / cover no-repeat;
+}
+
+@media (max-width: 768px) {
+  /* Mobile: ~35% photo clarity (0.65 wash) — a touch blurrier. */
+  .landing-page .lp-hero {
+    background:
+      linear-gradient(rgba(245, 242, 236, 0.65), rgba(245, 242, 236, 0.65)),
+      url('./landing-hero.jpg') center 35% / cover no-repeat;
+  }
 }
 
 /* Very subtle backdrop behind the hero copy and value strip — just enough to
@@ -7769,6 +7779,7 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
     box-shadow: var(--shadow-lg);
     background:
       linear-gradient(180deg, rgba(20, 16, 13, 0) 35%, rgba(20, 16, 13, 0.82) 100%),
+      linear-gradient(0deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.55) 100%),
       url('./auth-hero.jpg') center / cover no-repeat,
       linear-gradient(135deg, #d97706, #92400e);
     animation: authVisualIn 0.6s var(--ds-ease) both;
