@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getEventByPassId, joinEventByPassId } from '../services/api';
+import { downloadPassImage, downloadPassPdf } from '../utils/passCard';
 
 function EventDetails({ passId, user, onBack, onNavigate }) {
   const [event, setEvent] = useState(null);
@@ -169,7 +170,7 @@ function EventDetails({ passId, user, onBack, onNavigate }) {
           </div>
           <div className="stat-box">
             <div className="stat-box-label">Event Photos</div>
-            <div className="stat-box-value">{event.photos?.length || 0}</div>
+            <div className="stat-box-value">{Array.isArray(event.photos) ? event.photos.length : 0}</div>
           </div>
         </div>
 
@@ -182,6 +183,20 @@ function EventDetails({ passId, user, onBack, onNavigate }) {
             <div className="joined-status">
               <div className="joined-icon">✓</div>
               <p>You're registered for this event!</p>
+              <div className="pass-download-buttons">
+                <button
+                  className="btn-primary"
+                  onClick={() => downloadPassImage({ event, passId, attendeeName: user?.name })}
+                >
+                  🖼️ Download Pass (Image)
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => downloadPassPdf({ event, passId, attendeeName: user?.name })}
+                >
+                  📄 Download Pass (PDF)
+                </button>
+              </div>
               {onNavigate && (
                 <button 
                   className="btn-primary"

@@ -1,24 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getOrganizerEvents, createEvent, getGoogleAuthUrl, saveGoogleToken, getGoogleDriveStatus } from '../services/api';
+
+const EVENT_DRAFT_KEY = 'eventDraft';
+const EMPTY_EVENT_FORM = {
+  title: '',
+  description: '',
+  date: '',
+  startTime: '',
+  endTime: '',
+  location: '',
+  venue: '',
+  timeZone: 'UTC',
+  dressCode: '',
+  ageRestriction: '',
+  additionalInfo: '',
+  expectedAttendees: 0,
+  capacity: 0,
+  googleDriveFolderLink: ''
+};
 
 function Dashboard({ user, onNavigate }) {
   const [events, setEvents] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    location: '',
-    venue: '',
-    timeZone: 'UTC',
-    dressCode: '',
-    ageRestriction: '',
-    additionalInfo: '',
-    expectedAttendees: 0,
-    capacity: 0,
-    googleDriveFolderLink: ''
+  // Re-open the form automatically if there's a saved draft, so a returning
+  // user sees their in-progress event instead of a blank dashboard.
+  const [showForm, setShowForm] = useState(() => {
+    try {
+      const saved = localStorage.getItem(EVENT_DRAFT_KEY);
+      if (!saved) return false;
+      const draft = JSON.parse(saved);
+      return Object.values(draft).some(v => v !== '' && v !== 0 && v !== 'UTC');
+    } catch {
+      return false;
+    }
+  });
+  const formRef = useRef(null);
+  // Restore any half-finished event the organizer was typing before they
+  // switched apps (e.g. to copy a Google Drive link) so nothing is lost.
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = localStorage.getItem(EVENT_DRAFT_KEY);
+      return saved ? { ...EMPTY_EVENT_FORM, ...JSON.parse(saved) } : EMPTY_EVENT_FORM;
+    } catch {
+      return EMPTY_EVENT_FORM;
+    }
   });
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [stats, setStats] = useState({ total: 0, confirmed: 0, photos: 0 });
@@ -38,6 +62,24 @@ function Dashboard({ user, onNavigate }) {
       checkDriveStatus();
     }
   }, [user]);
+
+  // When the form opens, scroll it into view so the user clearly sees the
+  // fields appear below the "New Event" button.
+  useEffect(() => {
+    if (showForm) {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showForm]);
+
+  // Keep a draft of the form so typed data survives the user leaving the page
+  // (e.g. minimizing the phone to grab their Google Drive link).
+  useEffect(() => {
+    try {
+      localStorage.setItem(EVENT_DRAFT_KEY, JSON.stringify(formData));
+    } catch {
+      /* ignore quota/availability errors */
+    }
+  }, [formData]);
 
   const checkDriveStatus = async () => {
     try {
@@ -117,7 +159,9 @@ function Dashboard({ user, onNavigate }) {
   const calculateStats = (eventsList) => {
     const totalAttendees = eventsList.reduce((acc, e) => acc + (e.attendees?.length || 0), 0);
     const confirmed = eventsList.reduce((acc, e) => acc + (e.attendees?.filter(a => a.status === 'confirmed')?.length || 0), 0);
-    const photos = eventsList.reduce((acc, e) => acc + (e.photos?.length || 0), 0);
+    // Real photos live in the organizer's Google Drive, not in the DB. The
+    // legacy `photos` field is a placeholder string, so don't count it here.
+    const photos = 0;
     setStats({ total: totalAttendees, confirmed, photos });
   };
 
@@ -137,21 +181,12 @@ function Dashboard({ user, onNavigate }) {
         organizerId: user.id
       });
       setEvents([...events, response.data]);
-      setFormData({ 
-        title: '', 
-        description: '', 
-        date: '', 
-        startTime: '', 
-        endTime: '', 
-        location: '', 
-        venue: '', 
-        timeZone: 'UTC', 
-        dressCode: '', 
-        ageRestriction: '', 
-        additionalInfo: '', 
-        expectedAttendees: 0, 
-        capacity: 0
-      });
+      setFormData(EMPTY_EVENT_FORM);
+      try {
+        localStorage.removeItem(EVENT_DRAFT_KEY);
+      } catch {
+        /* ignore */
+      }
       setShowForm(false);
     } catch (error) {
       console.error('Failed to create event:', error);
@@ -264,7 +299,7 @@ function Dashboard({ user, onNavigate }) {
           </div>
 
           {showForm && (
-            <form className="event-creation-form" onSubmit={handleCreateEvent}>
+            <form className="event-creation-form" onSubmit={handleCreateEvent} ref={formRef}>
               <h3>Create New Event</h3>
               <div className="form-row">
                 <div className="form-group full">
@@ -414,6 +449,19 @@ function Dashboard({ user, onNavigate }) {
 
               <div className="form-row">
                 <div className="form-group full">
+                  <label>Additional Information</label>
+                  <textarea
+                    name="additionalInfo"
+                    placeholder="Parking, entry instructions, what to bring, etc."
+                    value={formData.additionalInfo}
+                    onChange={handleInputChange}
+                    rows="3"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group full">
                   <label>Google Drive Folder Link (for Photos)</label>
                   <input 
                     type="text" 
@@ -476,7 +524,7 @@ function Dashboard({ user, onNavigate }) {
                       <span className="stat-name">Confirmed</span>
                     </div>
                     <div className="stat">
-                      <span className="stat-value">{event.photos?.length || 0}</span>
+                      <span className="stat-value">{Array.isArray(event.photos) ? event.photos.length : 0}</span>
                       <span className="stat-name">Photos</span>
                     </div>
                   </div>

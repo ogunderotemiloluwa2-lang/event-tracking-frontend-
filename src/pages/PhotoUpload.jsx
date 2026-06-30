@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { uploadPhoto } from '../services/api';
+
+const PHOTO_DRAFT_KEY = 'photoUploadDraft';
 
 function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   console.log('PhotoUpload received event:', event);
@@ -14,11 +16,36 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const streamRef = useRef(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
-  const [photoCaption, setPhotoCaption] = useState('');
-  const [uploaderName, setUploaderName] = useState('');
-  const [uploaderEmail, setUploaderEmail] = useState('');
+  const [facingMode, setFacingMode] = useState('environment');
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  // Restore draft fields so switching apps to find the event code doesn't lose data.
+  const [photoCaption, setPhotoCaption] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.photoCaption || ''; } catch { return ''; }
+  });
+  const [uploaderName, setUploaderName] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.uploaderName || ''; } catch { return ''; }
+  });
+  const [uploaderEmail, setUploaderEmail] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.uploaderEmail || ''; } catch { return ''; }
+  });
 
-  const startCamera = async () => {
+  // Persist draft fields to localStorage so they survive page refreshes.
+  useEffect(() => {
+    try {
+      localStorage.setItem(PHOTO_DRAFT_KEY, JSON.stringify({ uploaderName, uploaderEmail, photoCaption }));
+    } catch { /* ignore quota errors */ }
+  }, [uploaderName, uploaderEmail, photoCaption]);
+
+  // Detect how many cameras are available so we can show/hide the switch button.
+  useEffect(() => {
+    if (navigator.mediaDevices?.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        setHasMultipleCameras(devices.filter(d => d.kind === 'videoinput').length > 1);
+      }).catch(() => {});
+    }
+  }, []);
+
+  const startCamera = useCallback(async () => {
     // getUserMedia only exists in a secure context (https:// or localhost).
     // When a guest opens a shared link over plain http on their phone the API
     // is simply missing, which previously left the button doing nothing.
@@ -28,7 +55,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
       // Keep the stream in a ref and flip the flag so the <video> element gets
       // rendered. The stream is attached in the effect below once it exists in
@@ -46,7 +73,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         setError('Unable to open the camera. Use “Choose from Gallery”, or check your browser camera permissions.');
       }
     }
-  };
+  }, [facingMode]);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -57,6 +84,35 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       videoRef.current.srcObject = null;
     }
     setIsCameraActive(false);
+  };
+
+  const switchCamera = async () => {
+    // Stop current stream first
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    // Flip facing mode
+    const newMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(newMode);
+    // Re-acquire stream with new facing mode
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newMode, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      streamRef.current = stream;
+      // Re-attach to video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play?.().catch(() => {});
+      }
+    } catch (err) {
+      console.error('Switch camera error:', err);
+      setError('Could not switch camera. Your device may only have one camera.');
+    }
   };
 
   // Attach the live stream once the <video> element is actually on screen, and
@@ -165,6 +221,8 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         setPhotoCaption('');
         setUploaderName('');
         setUploaderEmail('');
+        // Clear the saved draft so a fresh upload starts clean.
+        try { localStorage.removeItem(PHOTO_DRAFT_KEY); } catch { /* ignore */ }
         
         // Call callback if provided
         if (onUploadSuccess) {
@@ -177,7 +235,13 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         }, 3000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to upload photo. Please try again.');
+      // Surface the real backend reason so the attendee/organizer sees the
+      // actionable cause (e.g. "organizer hasn't connected Google Drive").
+      const serverMsg = err.response?.data?.message
+        || err.response?.data?.details
+        || err.response?.data?.error
+        || '';
+      setError(serverMsg || 'Failed to upload photo. Please try again.');
       console.error('Upload error:', err);
     } finally {
       setUploading(false);
@@ -208,16 +272,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                 <button className="btn-primary-large" onClick={startCamera}>
                   📱 Start Camera
                 </button>
-              ) : (
-                <>
-                  <button className="btn-secondary-large" onClick={stopCamera}>
-                    ✕ Stop Camera
-                  </button>
-                  <button className="btn-primary-large" onClick={capturePhoto}>
-                    📸 Capture Photo
-                  </button>
-                </>
-              )}
+              ) : null}
               
               <div className="divider">or</div>
               
@@ -227,7 +282,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
               >
                 📁 Choose from Gallery
               </button>
-              <input 
+              <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
@@ -237,14 +292,26 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
             </div>
 
             {isCameraActive && (
-              <div className="camera-preview">
+              <div className="camera-fullscreen">
                 <video 
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  style={{ width: '100%', borderRadius: '12px' }}
                 />
+                <div className="camera-controls-overlay">
+                  {hasMultipleCameras && (
+                    <button className="camera-btn" onClick={switchCamera} title="Switch Camera">
+                      🔄 Switch
+                    </button>
+                  )}
+                  <button className="camera-btn camera-btn-capture" onClick={capturePhoto} title="Capture">
+                        📸
+                  </button>
+                  <button className="camera-btn" onClick={stopCamera} title="Close Camera">
+                    ✕ Close
+                  </button>
+                </div>
               </div>
             )}
 

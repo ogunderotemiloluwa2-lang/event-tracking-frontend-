@@ -49,24 +49,15 @@ function Gallery() {
         }
       }
       
-      // Use real photos if available, otherwise show message
-      if (allPhotos.length === 0) {
-        setPhotos([]);
-        setStats({
-          totalPhotos: 0,
-          contributors: 0,
-          events: eventsData.length
-        });
-        setError('No photos uploaded yet. Attendees can share their photos!');
-      } else {
-        setPhotos(allPhotos);
-        setStats({
-          totalPhotos: allPhotos.length,
-          contributors: contributorsSet.size,
-          events: eventsData.length
-        });
-      }
-      
+      // No photos yet is a normal empty state, not an error — leave `error`
+      // unset so the friendly "No photos yet" message shows instead.
+      setPhotos(allPhotos);
+      setStats({
+        totalPhotos: allPhotos.length,
+        contributors: contributorsSet.size,
+        events: eventsData.length
+      });
+
       setLoading(false);
     } catch (err) {
       console.error('Failed to load gallery data:', err);
@@ -79,12 +70,8 @@ function Gallery() {
     ? photos 
     : photos.filter(p => p.eventId == filterEvent);
 
-  const mockEvents = [
-    { id: 1, title: 'Summer Tech Meetup', date: 'May 25, 2026', photos: 3 },
-    { id: 2, title: 'Innovation Summit', date: 'May 18, 2026', photos: 4 },
-  ];
-
-  const displayEvents = events.length > 0 ? events : mockEvents;
+  // Only ever list the organizer's real events — no sample/placeholder data.
+  const displayEvents = events;
 
   return (
     <div className="gallery-page">
@@ -143,7 +130,7 @@ function Gallery() {
         {loading ? (
           <div className="gallery-loading">Loading gallery...</div>
         ) : error ? (
-          <div className="gallery-error">Error loading gallery. Showing sample data.</div>
+          <div className="gallery-error">{error}</div>
         ) : filteredPhotos.length === 0 ? (
           <div className="gallery-empty">No photos yet. Start capturing memories!</div>
         ) : (
