@@ -29,6 +29,13 @@ function EventDetails({ passId, user, onBack, onNavigate }) {
     }
   };
 
+  // Calculate the attendee's number (1-based index in the attendees array)
+  const getAttendeeNumber = () => {
+    if (!event?.attendees || !user?.id) return null;
+    const idx = event.attendees.findIndex(a => a.userId === user.id);
+    return idx >= 0 ? idx + 1 : null;
+  };
+
   const handleJoinEvent = async () => {
     if (!user) {
       setError('Please log in to join an event');
@@ -186,13 +193,13 @@ function EventDetails({ passId, user, onBack, onNavigate }) {
               <div className="pass-download-buttons">
                 <button
                   className="btn-primary"
-                  onClick={() => downloadPassImage({ event, passId, attendeeName: user?.name })}
+                  onClick={() => downloadPassImage({ event, passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber() })}
                 >
                   🖼️ Download Pass (Image)
                 </button>
                 <button
                   className="btn-secondary"
-                  onClick={() => downloadPassPdf({ event, passId, attendeeName: user?.name })}
+                  onClick={() => downloadPassPdf({ event, passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber() })}
                 >
                   📄 Download Pass (PDF)
                 </button>

@@ -1,20 +1,24 @@
 // Attendee pass-card generator.
 //
-// Renders a printable event pass onto a <canvas> and lets the attendee save it
-// as a PNG image or a PDF. Both are produced with zero external dependencies:
-// the PDF is assembled by hand as a single-page document that embeds the
-// canvas as a JPEG (DCTDecode) image stream.
+// Renders a premium, printable event pass onto a <canvas> and lets the
+// attendee save it as a PNG image or a PDF. Both are produced with zero
+// external dependencies: the PDF is assembled by hand as a single-page
+// document that embeds the canvas as a JPEG (DCTDecode) image stream.
 
 const BRAND = '#D97706';
 const BRAND_DARK = '#B45309';
+const BRAND_LIGHT = '#F59E0B';
 const INK = '#1f2937';
 const MUTED = '#6b7280';
+const LIGHT_BG = '#faf7f2';
+const BORDER = '#eadfce';
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = reject;
+    img.crossOrigin = 'anonymous';
     img.src = src;
   });
 }
@@ -43,7 +47,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     }
   }
   if (line) ctx.fillText(line, x, cursorY);
-  return cursorY;
+  return cursorY + lineHeight;
 }
 
 function formatDate(date) {
@@ -57,94 +61,179 @@ function formatDate(date) {
   }
 }
 
+function formatTime(start, end) {
+  if (!start) return 'TBA';
+  let t = start;
+  if (end) t += ' – ' + end;
+  return t;
+}
+
 // Draw the pass onto a fresh canvas and return it.
-export async function renderPassCard({ event = {}, passId, attendeeName }) {
-  const W = 760;
-  const H = 1140;
+export async function renderPassCard({ event = {}, passId, attendeeName, attendeeNumber }) {
+  const W = 800;
+  const H = 1200;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // Card background
+  // ── Card background ──────────────────────────────────────────────
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // Header band
-  const grad = ctx.createLinearGradient(0, 0, W, 220);
+  // Subtle background pattern (diagonal lines)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(217, 119, 6, 0.04)';
+  ctx.lineWidth = 1;
+  for (let i = -H; i < W + H; i += 24) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i - H, H);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── Top decorative band ──────────────────────────────────────────
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
   grad.addColorStop(0, BRAND);
+  grad.addColorStop(0.5, BRAND_LIGHT);
   grad.addColorStop(1, BRAND_DARK);
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, 220);
+  ctx.fillRect(0, 0, W, 8);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.font = '600 26px Arial, sans-serif';
-  ctx.fillText('EVENT PASS', 48, 70);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 44px Arial, sans-serif';
-  wrapText(ctx, event.title || 'Event', 48, 130, W - 96, 50);
-
-  // Hosted by
-  ctx.fillStyle = INK;
-  ctx.font = '400 22px Arial, sans-serif';
-  ctx.fillText(`Hosted by ${event.createdBy?.name || event.organizer?.name || 'Organizer'}`, 48, 280);
-
-  // Detail rows
-  const rows = [
-    ['Attendee', attendeeName || '—'],
-    ['Date', formatDate(event.date)],
-    ['Time', event.startTime ? `${event.startTime}${event.endTime ? ' – ' + event.endTime : ''}` : 'TBA'],
-    ['Venue', event.venue || event.location || 'TBA'],
-    ['Location', event.location || 'TBA'],
-    ['Dress Code', event.dressCode || 'No dress code'],
-  ];
-
-  let y = 340;
-  ctx.textBaseline = 'alphabetic';
-  for (const [label, value] of rows) {
-    ctx.fillStyle = MUTED;
-    ctx.font = '600 18px Arial, sans-serif';
-    ctx.fillText(label.toUpperCase(), 48, y);
-    ctx.fillStyle = INK;
-    ctx.font = '500 26px Arial, sans-serif';
-    wrapText(ctx, value, 48, y + 32, W - 96, 30);
-    y += 78;
-  }
-
-  // Pass ID block
-  const boxY = y + 10;
-  ctx.fillStyle = '#faf7f2';
-  ctx.fillRect(48, boxY, W - 96, 120);
-  ctx.strokeStyle = '#eadfce';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(48, boxY, W - 96, 120);
+  // ── Header section ───────────────────────────────────────────────
+  // Gold accent bar
+  ctx.fillStyle = BRAND;
+  ctx.fillRect(48, 48, 6, 100);
 
   ctx.fillStyle = MUTED;
-  ctx.font = '600 18px Arial, sans-serif';
-  ctx.fillText('PASS ID', 72, boxY + 42);
-  ctx.fillStyle = BRAND_DARK;
-  ctx.font = '700 48px "Courier New", monospace';
-  ctx.fillText(passId || event.passId || '', 72, boxY + 96);
+  ctx.font = '600 18px "Segoe UI", Arial, sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillText('EVENT PASS', 72, 52);
 
-  // QR code (bottom). event.qrCode is a PNG data URL.
+  ctx.fillStyle = INK;
+  ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
+  wrapText(ctx, event.title || 'Event', 72, 80, W - 144, 48);
+
+  // ── Hosted by line ───────────────────────────────────────────────
+  ctx.fillStyle = MUTED;
+  ctx.font = '400 18px "Segoe UI", Arial, sans-serif';
+  ctx.fillText(`Hosted by ${event.createdBy?.name || event.organizer?.name || 'Organizer'}`, 72, 170);
+
+  // ── Divider ──────────────────────────────────────────────────────
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(48, 210);
+  ctx.lineTo(W - 48, 210);
+  ctx.stroke();
+
+  // ── Attendee info section ────────────────────────────────────────
+  ctx.fillStyle = LIGHT_BG;
+  ctx.fillRect(48, 230, W - 96, 130);
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(48, 230, W - 96, 130);
+
+  // Attendee name
+  ctx.fillStyle = MUTED;
+  ctx.font = '600 16px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('ATTENDEE', 72, 252);
+
+  ctx.fillStyle = INK;
+  ctx.font = '700 32px "Segoe UI", Arial, sans-serif';
+  ctx.fillText(attendeeName || '—', 72, 278);
+
+  // Attendee number (right side)
+  if (attendeeNumber) {
+    ctx.textAlign = 'right';
+    ctx.fillStyle = MUTED;
+    ctx.font = '600 14px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('ATTENDEE NO.', W - 72, 252);
+    ctx.fillStyle = BRAND_DARK;
+    ctx.font = '700 36px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(`#${attendeeNumber}`, W - 72, 280);
+    ctx.textAlign = 'left';
+  }
+
+  // ── Event details grid ───────────────────────────────────────────
+  const details = [
+    { label: 'DATE', value: formatDate(event.date) },
+    { label: 'TIME', value: formatTime(event.startTime, event.endTime) },
+    { label: 'VENUE', value: event.venue || event.location || 'TBA' },
+    { label: 'LOCATION', value: event.location || 'TBA' },
+    { label: 'DRESS CODE', value: event.dressCode || 'No dress code' },
+  ];
+
+  let y = 400;
+  const col1X = 72;
+  const col2X = W / 2 + 24;
+  const rowH = 72;
+
+  for (let i = 0; i < details.length; i++) {
+    const x = i < 3 ? col1X : col2X;
+    const idx = i < 3 ? i : i - 3;
+    const rowY = y + idx * rowH;
+
+    ctx.fillStyle = MUTED;
+    ctx.font = '600 14px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(details[i].label, x, rowY);
+
+    ctx.fillStyle = INK;
+    ctx.font = '500 22px "Segoe UI", Arial, sans-serif';
+    wrapText(ctx, details[i].value, x, rowY + 24, (W / 2) - 96, 26);
+  }
+
+  // ── Pass ID section ──────────────────────────────────────────────
+  const passY = y + 3 * rowH + 20;
+  ctx.fillStyle = LIGHT_BG;
+  ctx.fillRect(48, passY, W - 96, 100);
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(48, passY, W - 96, 100);
+
+  ctx.fillStyle = MUTED;
+  ctx.font = '600 16px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('PASS ID', 72, passY + 22);
+
+  ctx.fillStyle = BRAND_DARK;
+  ctx.font = '700 44px "Courier New", monospace';
+  ctx.fillText(passId || event.passId || '', 72, passY + 72);
+
+  // ── QR Code ──────────────────────────────────────────────────────
   const qrSrc = event.qrCode;
-  const qrSize = 240;
+  const qrSize = 200;
   const qrX = (W - qrSize) / 2;
-  const qrY = boxY + 170;
+  const qrY = passY + 140;
   if (qrSrc) {
     try {
       const qrImg = await loadImage(qrSrc);
+      // White background behind QR
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16);
+      ctx.strokeStyle = BORDER;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16);
       ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
     } catch {
-      /* QR optional — skip if it fails to load */
+      /* QR optional */
     }
   }
 
+  // ── Footer text ──────────────────────────────────────────────────
   ctx.fillStyle = MUTED;
-  ctx.font = '400 18px Arial, sans-serif';
+  ctx.font = '400 16px "Segoe UI", Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Show this pass at the entrance', W / 2, qrY + qrSize + 40);
+  ctx.fillText('Show this pass at the entrance', W / 2, qrY + qrSize + 50);
+
+  // Bottom decorative band
+  const grad2 = ctx.createLinearGradient(0, 0, W, 0);
+  grad2.addColorStop(0, BRAND);
+  grad2.addColorStop(0.5, BRAND_LIGHT);
+  grad2.addColorStop(1, BRAND_DARK);
+  ctx.fillStyle = grad2;
+  ctx.fillRect(0, H - 8, W, 8);
+
   ctx.textAlign = 'left';
 
   return canvas;
@@ -166,7 +255,7 @@ export async function downloadPassPdf(opts) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-// --- raw helpers -----------------------------------------------------------
+// ── raw helpers ─────────────────────────────────────────────────────
 
 function dataUrlToBytes(dataUrl) {
   const base64 = dataUrl.split(',')[1];
@@ -184,7 +273,6 @@ function strToBytes(str) {
 
 // Build a minimal, valid single-page PDF that draws the given JPEG full-page.
 function buildPdfFromJpeg(jpegBytes, imgW, imgH) {
-  // Scale the page to a sensible width (in PDF points) while keeping aspect.
   const pageW = 500;
   const pageH = Math.round((imgH / imgW) * pageW);
 

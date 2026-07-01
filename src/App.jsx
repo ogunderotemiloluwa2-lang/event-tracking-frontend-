@@ -38,6 +38,28 @@ function App() {
     const savedUser = token ? JSON.parse(localStorage.getItem('user') || 'null') : null;
     if (savedUser) setUser(savedUser);
 
+    // Check for ?join=CODE in URL — shareable event link from an organizer
+    const params = new URLSearchParams(window.location.search);
+    const joinPassId = params.get('join');
+    if (joinPassId) {
+      // Clean the URL without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+      if (savedUser && savedUser.role === 'attendee') {
+        setEventPassId(joinPassId);
+        setCurrentPage('event-details');
+        return;
+      } else if (savedUser && savedUser.role === 'organizer') {
+        // Organizers can't join events as attendees — send them to dashboard
+        setCurrentPage('dashboard');
+        return;
+      } else {
+        // Not logged in — save the passId so we can redirect after login
+        localStorage.setItem('pendingJoinPassId', joinPassId);
+        setCurrentPage('login');
+        return;
+      }
+    }
+
     // Restore the page the user was on before refreshing, instead of dropping to landing.
     const savedPage = localStorage.getItem('currentPage');
     if (savedPage && RESTORABLE_PAGES.has(savedPage)) {
@@ -101,7 +123,15 @@ function App() {
         <Register
           onRegistered={(user) => {
             setUser(user);
-            setCurrentPage(user.role === 'organizer' ? 'dashboard' : 'attendee');
+            // If user came via a ?join=CODE link, redirect to event details
+            const pendingJoin = localStorage.getItem('pendingJoinPassId');
+            if (pendingJoin && user.role === 'attendee') {
+              localStorage.removeItem('pendingJoinPassId');
+              setEventPassId(pendingJoin);
+              setCurrentPage('event-details');
+            } else {
+              setCurrentPage(user.role === 'organizer' ? 'dashboard' : 'attendee');
+            }
           }}
           onBack={() => handleNavigation('landing')}
         />
@@ -109,7 +139,15 @@ function App() {
         <Login
           onLoggedIn={(user) => {
             setUser(user);
-            setCurrentPage(user.role === 'organizer' ? 'dashboard' : 'attendee');
+            // If user came via a ?join=CODE link, redirect to event details
+            const pendingJoin = localStorage.getItem('pendingJoinPassId');
+            if (pendingJoin && user.role === 'attendee') {
+              localStorage.removeItem('pendingJoinPassId');
+              setEventPassId(pendingJoin);
+              setCurrentPage('event-details');
+            } else {
+              setCurrentPage(user.role === 'organizer' ? 'dashboard' : 'attendee');
+            }
           }}
           onBack={() => handleNavigation('landing')}
           onNavigate={handleNavigation}

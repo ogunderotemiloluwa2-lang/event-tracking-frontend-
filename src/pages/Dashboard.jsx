@@ -503,6 +503,34 @@ function Dashboard({ user, onNavigate }) {
                   <div className="pass-id-section">
                     <div className="pass-id-label">Pass ID for Attendees:</div>
                     <div className="pass-id-code">{event.passId}</div>
+                    <button
+                      className="btn-share-link"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Capture the button now — e.currentTarget is nulled once
+                        // the handler returns, so it can't be read inside a promise.
+                        const btn = e.currentTarget;
+                        const link = `${window.location.origin}${window.location.pathname}?join=${event.passId}`;
+                        const flashCopied = () => {
+                          const orig = btn.textContent;
+                          btn.textContent = '✓ Link copied!';
+                          setTimeout(() => { btn.textContent = orig; }, 2000);
+                        };
+                        // Prefer the native share sheet (mobile: forward via any app).
+                        if (navigator.share) {
+                          navigator.share({ title: event.title, text: `Join my event: ${event.title}`, url: link }).catch(() => {});
+                          return;
+                        }
+                        if (navigator.clipboard?.writeText) {
+                          navigator.clipboard.writeText(link).then(flashCopied).catch(() => window.prompt('Copy this event link:', link));
+                        } else {
+                          window.prompt('Copy this event link:', link);
+                        }
+                      }}
+                      title="Copy or share event link"
+                    >
+                      📤 Share Event Link
+                    </button>
                   </div>
 
                   <div className="event-card-info">

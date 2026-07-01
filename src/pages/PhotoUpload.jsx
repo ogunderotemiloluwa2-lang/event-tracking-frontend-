@@ -138,7 +138,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       canvasRef.current.width = videoRef.current.videoWidth;
       canvasRef.current.height = videoRef.current.videoHeight;
       context.drawImage(videoRef.current, 0, 0);
-      
+
       canvasRef.current.toBlob((blob) => {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -147,6 +147,10 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         };
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.9);
+
+      // The frame is already on the canvas, so release the camera immediately —
+      // otherwise the device's camera light/feed stays on during review.
+      stopCamera();
     }
   };
 
@@ -237,12 +241,14 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     } catch (err) {
       // Surface the real backend reason so the attendee/organizer sees the
       // actionable cause (e.g. "organizer hasn't connected Google Drive").
-      const serverMsg = err.response?.data?.message
-        || err.response?.data?.details
-        || err.response?.data?.error
-        || '';
+      const data = err.response?.data || {};
+      let serverMsg = data.message || data.details || data.error || '';
+      // Append the raw Google detail when it adds something beyond the message.
+      if (data.error && data.message && !data.message.includes(data.error)) {
+        serverMsg = `${data.message} (${data.error})`;
+      }
       setError(serverMsg || 'Failed to upload photo. Please try again.');
-      console.error('Upload error:', err);
+      console.error('Upload error:', err, 'response:', data);
     } finally {
       setUploading(false);
     }
