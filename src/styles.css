@@ -4433,9 +4433,170 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   width: 100%;
   max-width: 100%;
+}
+
+/* My Events page */
+.my-events-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.my-events-header h1 {
+  font-size: 1.75rem;
+  color: #fff;
+  margin-bottom: 0.4rem;
+}
+.my-events-header .step-description {
+  color: rgba(255,255,255,0.7);
+}
+
+.my-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.my-event-card {
+  background: rgba(45, 36, 32, 0.6);
+  border: 1px solid rgba(217, 119, 6, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.my-event-card:hover {
+  border-color: rgba(217, 119, 6, 0.4);
+}
+.my-event-card.expanded {
+  border-color: rgba(217, 119, 6, 0.5);
+}
+
+.my-event-card-main {
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+}
+
+.my-event-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.my-event-card-top h3 {
+  font-size: 1.1rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.event-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.my-event-card-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.65);
+}
+
+.my-event-card-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+}
+.expand-hint {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.my-event-card-details {
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid rgba(217, 119, 6, 0.1);
+  padding-top: 1rem;
+  margin-top: 0.25rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.my-event-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.detail-label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.detail-value {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.85);
+}
+
+.my-event-description,
+.my-event-additional {
+  margin-bottom: 0.75rem;
+}
+.my-event-description h4,
+.my-event-additional h4 {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 0.3rem;
+}
+.my-event-description p,
+.my-event-additional p {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.5;
+}
+
+.my-event-pass-id {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(217, 119, 6, 0.08);
+  border-radius: 8px;
+  display: inline-block;
+}
+.my-event-pass-id strong {
+  color: var(--primary-light);
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+.my-event-card-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+.my-event-card-actions .btn-primary,
+.my-event-card-actions .btn-action {
+  flex: 1;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.join-new-section {
+  margin-top: 0.5rem;
 }
 
 .step-container {
@@ -7662,8 +7823,38 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 .app .error-state h2 { margin-bottom: 0.5rem; }
 
 /* ---------- Attendee join (pass entry) ---------- */
-.app .attendee-page { min-height: calc(100vh - 4.25rem); display: grid; place-items: center; padding: 2rem 1.25rem; }
-.app .attendee-container { width: 100%; max-width: 460px; }
+.app .attendee-page { min-height: calc(100vh - 4.25rem); display: grid; place-items: start center; padding: 2rem 1.25rem; }
+.app .attendee-container { width: 100%; max-width: 700px; }
+
+/* My Events page (attendee) */
+.app .my-events-header { text-align: center; margin-bottom: 1.5rem; }
+.app .my-events-header h1 { font-size: 1.75rem; margin-bottom: 0.4rem; }
+.app .my-events-header .step-description { color: var(--ds-ink-2); }
+.app .my-events-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+.app .my-event-card { background: #fff; border: 1px solid var(--ds-line); border-radius: 14px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; box-shadow: var(--shadow-sm); }
+.app .my-event-card:hover { border-color: var(--ds-accent); box-shadow: var(--shadow-md); }
+.app .my-event-card.expanded { border-color: var(--ds-accent); box-shadow: var(--shadow-md); }
+.app .my-event-card-main { padding: 1rem 1.25rem; cursor: pointer; }
+.app .my-event-card-top { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.app .my-event-card-top h3 { font-size: 1.1rem; font-weight: 600; }
+.app .event-status-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.03em; }
+.app .my-event-card-meta { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--ds-ink-2); }
+.app .my-event-card-preview { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; font-size: 0.82rem; color: var(--ds-ink-3); }
+.app .expand-hint { font-size: 0.75rem; opacity: 0.5; }
+.app .my-event-card-details { padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--ds-line); padding-top: 1rem; margin-top: 0.25rem; animation: fadeIn 0.2s ease; }
+.app .my-event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
+.app .detail-item { display: flex; flex-direction: column; gap: 0.15rem; }
+.app .detail-label { font-size: 0.72rem; color: var(--ds-ink-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.app .detail-value { font-size: 0.88rem; color: var(--ds-ink); }
+.app .my-event-description, .app .my-event-additional { margin-bottom: 0.75rem; }
+.app .my-event-description h4, .app .my-event-additional h4 { font-size: 0.85rem; color: var(--ds-ink-2); margin-bottom: 0.3rem; }
+.app .my-event-description p, .app .my-event-additional p { font-size: 0.88rem; color: var(--ds-ink); line-height: 1.5; }
+.app .my-event-pass-id { font-size: 0.82rem; color: var(--ds-ink-2); margin-bottom: 1rem; padding: 0.5rem 0.75rem; background: var(--ds-paper); border: 1px solid var(--ds-line); border-radius: 8px; display: inline-block; }
+.app .my-event-pass-id strong { color: var(--ds-accent); font-family: monospace; letter-spacing: 0.05em; }
+.app .my-event-card-actions { display: flex; gap: 0.75rem; }
+.app .my-event-card-actions .btn-primary,
+.app .my-event-card-actions .btn-action { flex: 1; text-align: center; font-size: 0.85rem; }
+.app .join-new-section { margin-top: 0.5rem; }
 .app .step-container { background: #fff; border: 1px solid var(--ds-line); border-radius: 18px; padding: clamp(1.75rem, 4vw, 2.5rem); text-align: center; box-shadow: var(--shadow-lg); }
 .app .step-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .app .step-container h1 { font-size: 1.75rem; margin-bottom: 0.4rem; }

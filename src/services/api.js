@@ -27,6 +27,8 @@ export const deleteEvent = (id) => api.delete(`/events/${id}`);
 export const getOrganizerEvents = (organizerId) => api.get(`/events/organizer/${organizerId}`);
 export const getEventByPassId = (passId) => api.get(`/events/by-passid/${passId}`);
 export const joinEventByPassId = (passId, userId) => api.post('/events/join-by-passid', { passId, userId });
+export const getUserEvents = (userId) => api.get(`/events/by-user/${userId}`);
+export const leaveEventByPassId = (passId, userId) => api.post('/events/leave-by-passid', { passId, userId });
 export const confirmAttendee = (eventId, attendeeId) => api.post(`/events/${eventId}/confirm-attendee`, { attendeeId });
 
 // Attendees API
