@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getOrganizerEvents, createEvent, getGoogleAuthUrl, saveGoogleToken, getGoogleDriveStatus } from '../services/api';
+import { getOrganizerEvents, createEvent, updateEvent, deleteEvent, getGoogleAuthUrl, saveGoogleToken, getGoogleDriveStatus } from '../services/api';
 
 const EVENT_DRAFT_KEY = 'eventDraft';
 const EMPTY_EVENT_FORM = {
@@ -45,6 +45,10 @@ function Dashboard({ user, onNavigate }) {
     }
   });
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState({ total: 0, confirmed: 0, photos: 0 });
   const [driveConnected, setDriveConnected] = useState(false);
   const [connectingDrive, setConnectingDrive] = useState(false);
@@ -202,6 +206,72 @@ function Dashboard({ user, onNavigate }) {
     link.click();
   };
 
+  const handleDeleteEvent = async (eventId) => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await deleteEvent(eventId);
+      setEvents(prev => prev.filter(e => e._id !== eventId));
+      calculateStats(events.filter(e => e._id !== eventId));
+      setDeleteConfirm(null);
+      if (selectedEvent?._id === eventId) setSelectedEvent(null);
+    } catch (err) {
+      console.error('Failed to delete event:', err);
+      alert('Failed to delete event: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleEditClick = (event) => {
+    // Pre-fill the form with the event's current data
+    const startTime = event.startTime || '';
+    const endTime = event.endTime || '';
+    setFormData({
+      title: event.title || '',
+      description: event.description || '',
+      date: event.date ? event.date.split('T')[0] : '',
+      startTime: typeof startTime === 'string' ? startTime : '',
+      endTime: typeof endTime === 'string' ? endTime : '',
+      location: event.location || '',
+      venue: event.venue || '',
+      timeZone: event.timeZone || 'UTC',
+      dressCode: event.dressCode || '',
+      ageRestriction: event.ageRestriction || '',
+      additionalInfo: event.additionalInfo || '',
+      expectedAttendees: event.expectedAttendees || 0,
+      capacity: event.capacity || 0,
+      googleDriveFolderLink: event.googleDriveFolderLink || ''
+    });
+    setEditingEvent(event);
+    setShowForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  };
+
+  const handleUpdateEvent = async (e) => {
+    e.preventDefault();
+    if (!editingEvent || saving) return;
+    setSaving(true);
+    try {
+      const response = await updateEvent(editingEvent._id, {
+        ...formData,
+        organizerId: user.id
+      });
+      const updated = response.data;
+      setEvents(prev => prev.map(ev => ev._id === updated._id ? updated : ev));
+      calculateStats(events.map(ev => ev._id === updated._id ? updated : ev));
+      setEditingEvent(null);
+      setFormData(EMPTY_EVENT_FORM);
+      try { localStorage.removeItem(EVENT_DRAFT_KEY); } catch { /* ignore */ }
+      setShowForm(false);
+    } catch (err) {
+      console.error('Failed to update event:', err);
+      alert('Failed to update event: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="dashboard">
       <section className="dashboard-hero">
@@ -299,8 +369,8 @@ function Dashboard({ user, onNavigate }) {
           </div>
 
           {showForm && (
-            <form className="event-creation-form" onSubmit={handleCreateEvent} ref={formRef}>
-              <h3>Create New Event</h3>
+            <form className="event-creation-form" onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent} ref={formRef}>
+              <h3>{editingEvent ? 'Edit Event' : 'Create New Event'}</h3>
               <div className="form-row">
                 <div className="form-group full">
                   <label>Event Title</label>
@@ -479,8 +549,17 @@ function Dashboard({ user, onNavigate }) {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn-primary">Create Event</button>
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+                <button type="submit" className="btn-primary" disabled={saving}>
+                  {saving ? 'Saving…' : editingEvent ? 'Update Event' : 'Create Event'}
+                </button>
+                <button type="button" className="btn-secondary" onClick={() => {
+                  setShowForm(false);
+                  setEditingEvent(null);
+                  setFormData(EMPTY_EVENT_FORM);
+                  try { localStorage.removeItem(EVENT_DRAFT_KEY); } catch { /* ignore */ }
+                }}>
+                  {editingEvent ? 'Cancel Edit' : 'Cancel'}
+                </button>
               </div>
             </form>
           )}
@@ -607,12 +686,62 @@ function Dashboard({ user, onNavigate }) {
                       Analytics
                     </button>
                   </div>
+
+                  {/* Edit & Delete Actions */}
+                  <div className="event-actions" style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px' }}>
+                    <button
+                      className="btn-action btn-edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(event);
+                      }}
+                    >
+                      ✏️ Edit Event
+                    </button>
+                    <button
+                      className="btn-action btn-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirm(event._id);
+                      }}
+                    >
+                      🗑️ Delete Event
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
         </div>
       </section>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <section className="event-details-modal">
+          <div className="modal-content delete-confirm-modal">
+            <h3>Delete Event?</h3>
+            <p>This action cannot be undone. All attendee data and associated photos will remain in your Google Drive but the event will be permanently removed from the system.</p>
+            <div className="form-actions" style={{ marginTop: '1.5rem' }}>
+              <button
+                className="btn-primary"
+                style={{ backgroundColor: '#ef4444' }}
+                onClick={() => handleDeleteEvent(deleteConfirm)}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting…' : 'Yes, Delete Event'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {selectedEvent && (
         <section className="event-details-modal">

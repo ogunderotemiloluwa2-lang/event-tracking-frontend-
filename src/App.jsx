@@ -297,7 +297,7 @@ function App() {
               <button className="nav-link" onClick={handleBackToLanding}>Home</button>
             </div>
           </nav>
-          <Gallery />
+          <Gallery user={user} />
         </div>
       )}
     </div>
