@@ -30,6 +30,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [resetData, setResetData] = useState({ email: '', code: '' });
   const [eventPassId, setEventPassId] = useState(null);
+  const [autoJoinPassId, setAutoJoinPassId] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [photoUploadData, setPhotoUploadData] = useState({ event: null, attendeePassId: null });
 
@@ -46,6 +47,7 @@ function App() {
       window.history.replaceState({}, '', window.location.pathname);
       if (savedUser && savedUser.role === 'attendee') {
         setEventPassId(joinPassId);
+        setAutoJoinPassId(joinPassId); // triggers auto-join in EventDetails
         setCurrentPage('event-details');
         return;
       } else if (savedUser && savedUser.role === 'organizer') {
@@ -128,6 +130,7 @@ function App() {
             if (pendingJoin && user.role === 'attendee') {
               localStorage.removeItem('pendingJoinPassId');
               setEventPassId(pendingJoin);
+              setAutoJoinPassId(pendingJoin);
               setCurrentPage('event-details');
             } else {
               setCurrentPage(user.role === 'organizer' ? 'dashboard' : 'attendee');
@@ -144,6 +147,7 @@ function App() {
             if (pendingJoin && user.role === 'attendee') {
               localStorage.removeItem('pendingJoinPassId');
               setEventPassId(pendingJoin);
+              setAutoJoinPassId(pendingJoin);
               setCurrentPage('event-details');
             } else {
               setCurrentPage(user.role === 'organizer' ? 'dashboard' : 'attendee');
@@ -175,6 +179,8 @@ function App() {
           <EventDetails 
             passId={eventPassId}
             user={user}
+            autoJoinPassId={autoJoinPassId}
+            onAutoJoined={() => setAutoJoinPassId(null)}
             onBack={() => handleNavigation('attendee')}
             onNavigate={handleNavigation}
           />

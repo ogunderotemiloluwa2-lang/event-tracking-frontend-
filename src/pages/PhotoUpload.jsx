@@ -27,16 +27,14 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const [uploaderName, setUploaderName] = useState(() => {
     try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.uploaderName || ''; } catch { return ''; }
   });
-  const [uploaderEmail, setUploaderEmail] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.uploaderEmail || ''; } catch { return ''; }
-  });
+  // uploaderEmail was removed — only name + optional caption are needed
 
   // Persist draft fields to localStorage so they survive page refreshes.
   useEffect(() => {
     try {
-      localStorage.setItem(PHOTO_DRAFT_KEY, JSON.stringify({ uploaderName, uploaderEmail, photoCaption }));
+      localStorage.setItem(PHOTO_DRAFT_KEY, JSON.stringify({ uploaderName, photoCaption }));
     } catch { /* ignore quota errors */ }
-  }, [uploaderName, uploaderEmail, photoCaption]);
+  }, [uploaderName, photoCaption]);
 
   // Detect how many cameras are available so we can show/hide the switch button.
   useEffect(() => {
@@ -202,8 +200,8 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       return;
     }
 
-    if (!uploaderName.trim() || !uploaderEmail.trim()) {
-      setError('Please provide your name and email to upload photos');
+    if (!uploaderName.trim()) {
+      setError('Please provide your name to upload photos');
       return;
     }
 
@@ -233,7 +231,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         attendeePassId, 
         file,
         uploaderName,
-        uploaderEmail,
         photoCaption
       );
 
@@ -242,7 +239,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         setCapturedImage(null);
         setPhotoCaption('');
         setUploaderName('');
-        setUploaderEmail('');
         // Clear the saved draft so a fresh upload starts clean.
         try { localStorage.removeItem(PHOTO_DRAFT_KEY); } catch { /* ignore */ }
         
@@ -385,20 +381,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
               </div>
 
               <div className="form-field">
-                <label htmlFor="email">Your Email *</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={uploaderEmail}
-                  onChange={(e) => setUploaderEmail(e.target.value)}
-                  className="input-large"
-                  required
-                />
-                <small>For event organizer contact and photo attribution</small>
-              </div>
-
-              <div className="form-field">
                 <label htmlFor="caption">Photo Caption (Optional)</label>
                 <input
                   id="caption"
@@ -427,7 +409,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                 <button 
                   type="submit"
                   className="btn-primary-large"
-                  disabled={uploading || !uploaderName.trim() || !uploaderEmail.trim()}
+                  disabled={uploading || !uploaderName.trim()}
                 >
                   {uploading ? '📤 Uploading...' : '✓ Upload Photo'}
                 </button>

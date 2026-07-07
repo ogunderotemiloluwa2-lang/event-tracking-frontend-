@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getEventByPassId, joinEventByPassId } from '../services/api';
 import { downloadPassImage, downloadPassPdf } from '../utils/passCard';
 
-function EventDetails({ passId, user, onBack, onNavigate }) {
+function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNavigate }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -12,6 +12,13 @@ function EventDetails({ passId, user, onBack, onNavigate }) {
   useEffect(() => {
     loadEventDetails();
   }, [passId]);
+
+  // Auto-join when coming from a shareable ?join=CODE link
+  useEffect(() => {
+    if (autoJoinPassId && event && !isJoined && !joining) {
+      handleJoinEvent();
+    }
+  }, [autoJoinPassId, event, isJoined]);
 
   const loadEventDetails = async () => {
     try {
@@ -47,6 +54,8 @@ function EventDetails({ passId, user, onBack, onNavigate }) {
       await joinEventByPassId(passId);
       setIsJoined(true);
       setError('');
+      // Clear the auto-join flag so it doesn't re-trigger
+      if (onAutoJoined) onAutoJoined();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to join event');
       console.error('Error joining event:', err);
