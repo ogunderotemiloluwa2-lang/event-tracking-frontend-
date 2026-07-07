@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getEvents, getEventPhotos, deleteEvent } from '../services/api';
+import { getEvents, getEventPhotos, deleteEvent, getOrganizerEvents, getUserEvents } from '../services/api';
 
 function Gallery({ user }) {
   const [filterEvent, setFilterEvent] = useState('all');
@@ -15,20 +15,44 @@ function Gallery({ user }) {
 
   useEffect(() => {
     loadGalleryData();
-  }, []);
+  }, [user]);
 
   const loadGalleryData = async () => {
     try {
       setLoading(true);
-      const response = await getEvents();
-      const eventsData = response.data || [];
-      setEvents(eventsData);
+
+      // Show only relevant events based on user role:
+      //   - Attendee → only events they joined
+      //   - Organizer → only their own events
+      //   - Unauthenticated → all public events
+      let eventsData;
+      if (user?.role === 'attendee') {
+        const resp = await getUserEvents();
+        eventsData = resp.data || [];
+      } else if (user?.role === 'organizer') {
+        const resp = await getOrganizerEvents();
+        eventsData = resp.data || [];
+      } else {
+        const resp = await getEvents();
+        eventsData = resp.data || [];
+      }
+
+      // Deduplicate by title+date — the database has duplicate entries
+      // (same event created twice with different _id values)
+      const seen = new Set();
+      const uniqueEvents = eventsData.filter(e => {
+        const key = `${e.title}|${e.date}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setEvents(uniqueEvents);
       
       // Fetch photos for each event from the new endpoint
       const allPhotos = [];
       const contributorsSet = new Set();
       
-      for (const event of eventsData) {
+      for (const event of uniqueEvents) {
         try {
           const photosResponse = await getEventPhotos(event._id);
           const eventPhotos = photosResponse.data?.photos || [];
@@ -56,7 +80,7 @@ function Gallery({ user }) {
       setStats({
         totalPhotos: allPhotos.length,
         contributors: contributorsSet.size,
-        events: eventsData.length
+        events: uniqueEvents.length
       });
 
       setLoading(false);

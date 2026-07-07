@@ -179,6 +179,9 @@ function Dashboard({ user, onNavigate }) {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
+    // Prevent double-submit — clicking "Create Event" twice creates duplicates
+    if (saving) return;
+    setSaving(true);
     try {
       const response = await createEvent({
         ...formData
@@ -193,6 +196,8 @@ function Dashboard({ user, onNavigate }) {
       setShowForm(false);
     } catch (error) {
       console.error('Failed to create event:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
