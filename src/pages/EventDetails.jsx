@@ -44,7 +44,7 @@ function EventDetails({ passId, user, onBack, onNavigate }) {
 
     try {
       setJoining(true);
-      await joinEventByPassId(passId, user.id);
+      await joinEventByPassId(passId);
       setIsJoined(true);
       setError('');
     } catch (err) {

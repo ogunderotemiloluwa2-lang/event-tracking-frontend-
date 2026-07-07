@@ -152,7 +152,7 @@ function Dashboard({ user, onNavigate }) {
 
   const loadEvents = async () => {
     try {
-      const response = await getOrganizerEvents(user.id);
+      const response = await getOrganizerEvents();
       setEvents(response.data);
       calculateStats(response.data);
     } catch (error) {
@@ -181,8 +181,7 @@ function Dashboard({ user, onNavigate }) {
     e.preventDefault();
     try {
       const response = await createEvent({
-        ...formData,
-        organizerId: user.id
+        ...formData
       });
       setEvents([...events, response.data]);
       setFormData(EMPTY_EVENT_FORM);
@@ -254,8 +253,7 @@ function Dashboard({ user, onNavigate }) {
     setSaving(true);
     try {
       const response = await updateEvent(editingEvent._id, {
-        ...formData,
-        organizerId: user.id
+        ...formData
       });
       const updated = response.data;
       setEvents(prev => prev.map(ev => ev._id === updated._id ? updated : ev));

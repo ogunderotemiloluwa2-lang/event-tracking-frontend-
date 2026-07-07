@@ -17,6 +17,8 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [facingMode, setFacingMode] = useState('environment');
+  const capturingRef = useRef(false); // Prevents double-capture race condition
+  const uploadingRef = useRef(false); // Prevents double-submit race condition
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   // Restore draft fields so switching apps to find the event code doesn't lose data.
   const [photoCaption, setPhotoCaption] = useState(() => {
@@ -133,6 +135,11 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   }, []);
 
   const capturePhoto = () => {
+    // Prevent double-capture race condition — if the user taps the button twice
+    // quickly, only the first capture is processed.
+    if (capturingRef.current) return;
+    capturingRef.current = true;
+
     if (videoRef.current && canvasRef.current) {
       const context = canvasRef.current.getContext('2d');
       canvasRef.current.width = videoRef.current.videoWidth;
@@ -144,6 +151,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         reader.onloadend = () => {
           setCapturedImage(reader.result);
           setError('');
+          capturingRef.current = false;
         };
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.9);
@@ -151,13 +159,17 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       // The frame is already on the canvas, so release the camera immediately —
       // otherwise the device's camera light/feed stays on during review.
       stopCamera();
+    } else {
+      capturingRef.current = false;
     }
   };
 
   const handleFileSelect = (e) => {
     const file = e.target.files && e.target.files[0];
     // Reset the input value so picking the SAME image again still fires onChange.
-    e.target.value = '';
+    if (e.target.value !== undefined) {
+      e.target.value = '';
+    }
 
     if (!file) return;
 
@@ -195,6 +207,9 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       return;
     }
 
+    // Prevent double-submit — if already uploading, ignore the click.
+    if (uploadingRef.current) return;
+    uploadingRef.current = true;
     setUploading(true);
     setError('');
     setSuccessMessage('');
@@ -204,7 +219,10 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       const response = await fetch(capturedImage);
       const blob = await response.blob();
       
-      const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      // Use timestamp + random suffix so two photos taken in the same
+      // millisecond never collide / overwrite each other in Google Drive.
+      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+      const file = new File([blob], `photo-${Date.now()}-${uniqueSuffix}.jpg`, { type: 'image/jpeg' });
 
       console.log('About to upload with event._id:', event?._id);
       console.log('Full event object:', event);
@@ -251,6 +269,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       console.error('Upload error:', err, 'response:', data);
     } finally {
       setUploading(false);
+      uploadingRef.current = false;
     }
   };
 
@@ -275,9 +294,28 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
           <div className="camera-section">
             <div className="camera-modes">
               {!isCameraActive ? (
-                <button className="btn-primary-large" onClick={startCamera}>
-                  📱 Start Camera
-                </button>
+                <>
+                  <button className="btn-primary-large" onClick={startCamera}>
+                    📱 Open In-Browser Camera
+                  </button>
+                  <div className="divider">or</div>
+                  {/* Native phone camera — opens the device's own camera app on mobile */}
+                  <button
+                    className="btn-primary-large"
+                    style={{ background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)' }}
+                    onClick={() => {
+                      // Use capture attribute to open native camera directly
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.capture = 'environment';
+                      input.onchange = (e) => handleFileSelect(e);
+                      input.click();
+                    }}
+                  >
+                    📷 Use Phone Camera
+                  </button>
+                </>
               ) : null}
               
               <div className="divider">or</div>

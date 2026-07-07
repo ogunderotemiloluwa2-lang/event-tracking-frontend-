@@ -22,7 +22,7 @@ function Attendee({ user, onNavigate }) {
   const loadMyEvents = async () => {
     try {
       setLoading(true);
-      const response = await getUserEvents(user.id);
+      const response = await getUserEvents();
       setMyEvents(response.data || []);
     } catch (err) {
       console.error('Failed to load events:', err);
@@ -53,7 +53,7 @@ function Attendee({ user, onNavigate }) {
     setLeavingId(event._id);
     setLeaving(true);
     try {
-      await leaveEventByPassId(event.passId, user.id);
+      await leaveEventByPassId(event.passId);
       setMyEvents(prev => prev.filter(e => e._id !== event._id));
     } catch (err) {
       alert('Failed to leave event: ' + (err.response?.data?.message || err.message));
