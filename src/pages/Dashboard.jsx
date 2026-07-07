@@ -543,10 +543,14 @@ function Dashboard({ user, onNavigate }) {
                     value={formData.googleDriveFolderLink} 
                     onChange={handleInputChange}
                   />
-                  <small style={{ color: '#666', marginTop: '0.5rem', display: 'block' }}>
-                    All photos will be uploaded directly to this Google Drive folder.
-                    <br/>Create a folder in Google Drive, share it (Anyone with the link), then paste the link here.
-                    <br/>Photos go directly to your Drive — never stored on our servers.
+                  <small style={{ color: '#D97706', marginTop: '0.5rem', display: 'block', lineHeight: '1.6' }}>
+                    <strong>⚠️ Important:</strong> This folder MUST be created <strong>inside your own Google Drive</strong>.
+                    <br/>• Go to <strong>drive.google.com</strong> → Click <strong>"+ New" → "New Folder"</strong>
+                    <br/>• Name it after your event (e.g. "Wedding Photos")
+                    <br/>• Right-click the folder → <strong>Share</strong> → Set to <strong>"Anyone with the link" → "Editor"</strong>
+                    <br/>• Copy the browser address bar link and paste it above
+                    <br/>• ❌ <strong>Do NOT</strong> paste a folder link that someone else shared with you — it won't work!
+                    <br/>• Photos go directly to your Drive — never stored on our servers.
                   </small>
                 </div>
               </div>
