@@ -24,17 +24,14 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const [photoCaption, setPhotoCaption] = useState(() => {
     try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.photoCaption || ''; } catch { return ''; }
   });
-  const [uploaderName, setUploaderName] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.uploaderName || ''; } catch { return ''; }
-  });
-  // uploaderEmail was removed — only name + optional caption are needed
+  // Name & email removed — only photo + optional caption
 
   // Persist draft fields to localStorage so they survive page refreshes.
   useEffect(() => {
     try {
-      localStorage.setItem(PHOTO_DRAFT_KEY, JSON.stringify({ uploaderName, photoCaption }));
+      localStorage.setItem(PHOTO_DRAFT_KEY, JSON.stringify({ photoCaption }));
     } catch { /* ignore quota errors */ }
-  }, [uploaderName, photoCaption]);
+  }, [photoCaption]);
 
   // Detect how many cameras are available so we can show/hide the switch button.
   useEffect(() => {
@@ -200,11 +197,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       return;
     }
 
-    if (!uploaderName.trim()) {
-      setError('Please provide your name to upload photos');
-      return;
-    }
-
     // Prevent double-submit — if already uploading, ignore the click.
     if (uploadingRef.current) return;
     uploadingRef.current = true;
@@ -230,7 +222,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         event._id, 
         attendeePassId, 
         file,
-        uploaderName,
         photoCaption
       );
 
@@ -238,7 +229,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         setSuccessMessage('✅ Photo uploaded successfully to Google Drive!');
         setCapturedImage(null);
         setPhotoCaption('');
-        setUploaderName('');
         // Clear the saved draft so a fresh upload starts clean.
         try { localStorage.removeItem(PHOTO_DRAFT_KEY); } catch { /* ignore */ }
         
@@ -367,20 +357,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
 
             <form onSubmit={handleUploadPhoto} className="photo-upload-form">
               <div className="form-field">
-                <label htmlFor="name">Your Name *</label>
-                <input
-                  id="name"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={uploaderName}
-                  onChange={(e) => setUploaderName(e.target.value)}
-                  className="input-large"
-                  required
-                />
-                <small>We'll credit you as the photo contributor</small>
-              </div>
-
-              <div className="form-field">
                 <label htmlFor="caption">Photo Caption (Optional)</label>
                 <input
                   id="caption"
@@ -409,7 +385,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                 <button 
                   type="submit"
                   className="btn-primary-large"
-                  disabled={uploading || !uploaderName.trim()}
+                  disabled={uploading}
                 >
                   {uploading ? '📤 Uploading...' : '✓ Upload Photo'}
                 </button>
