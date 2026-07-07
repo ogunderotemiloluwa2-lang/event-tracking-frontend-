@@ -19,6 +19,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const [facingMode, setFacingMode] = useState('environment');
   const capturingRef = useRef(false); // Prevents double-capture race condition
   const uploadingRef = useRef(false); // Prevents double-submit race condition
+  const selectingRef = useRef(false); // Prevents double-file-select race condition (Android camera fires change event twice)
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   // Restore draft fields so switching apps to find the event code doesn't lose data.
   const [photoCaption, setPhotoCaption] = useState(() => {
@@ -47,7 +48,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     // When a guest opens a shared link over plain http on their phone the API
     // is simply missing, which previously left the button doing nothing.
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setError('Your browser can’t open the camera here. This usually means the page isn’t on a secure (https) link. Use “Choose from Gallery” below, or open the link in Chrome/Safari over https.');
+      setError('Your browser can\u2019t open the camera here. This usually means the page isn\u2019t on a secure (https) link. Use \u201cChoose from Gallery\u201d below, or open the link in Chrome/Safari over https.');
       return;
     }
     try {
@@ -63,11 +64,11 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     } catch (err) {
       console.error('Camera error:', err);
       if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
-        setError('Camera permission was blocked. Allow camera access for this site in your browser settings, then try again — or use “Choose from Gallery”.');
+        setError('Camera permission was blocked. Allow camera access for this site in your browser settings, then try again \u2014 or use \u201cChoose from Gallery\u201d.');
       } else if (err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
-        setError('No camera was found on this device. Use “Choose from Gallery” instead.');
+        setError('No camera was found on this device. Use \u201cChoose from Gallery\u201d instead.');
       } else {
-        setError('Unable to open the camera. Use “Choose from Gallery”, or check your browser camera permissions.');
+        setError('Unable to open the camera. Use \u201cChoose from Gallery\u201d, or check your browser camera permissions.');
       }
     }
   }, [facingMode]);
@@ -160,22 +161,34 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   };
 
   const handleFileSelect = (e) => {
+    // On some Android phones, the camera input fires the change event TWICE.
+    // The first call is the photo from the camera. The second call is triggered
+    // when Android saves the photo to the gallery. Guard with a ref so only the
+    // first event is processed and the duplicate is silently dropped.
+    if (selectingRef.current) return;
+    selectingRef.current = true;
+
     const file = e.target.files && e.target.files[0];
     // Reset the input value so picking the SAME image again still fires onChange.
     if (e.target.value !== undefined) {
       e.target.value = '';
     }
 
-    if (!file) return;
+    if (!file) {
+      selectingRef.current = false;
+      return;
+    }
 
     if (!file.type || !file.type.startsWith('image/')) {
-      setError('That file isn’t an image. Please choose a photo (JPG, PNG, etc.).');
+      setError('That file isn\u2019t an image. Please choose a photo (JPG, PNG, etc.).');
+      selectingRef.current = false;
       return;
     }
 
     // Guard very large files so the upload doesn't silently fail on slow links.
     if (file.size > 15 * 1024 * 1024) {
       setError('That image is larger than 15 MB. Please choose a smaller photo.');
+      selectingRef.current = false;
       return;
     }
 
@@ -183,15 +196,19 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     reader.onload = () => {
       setCapturedImage(reader.result);
       setError('');
+      // Reset the guard after the image is set, so the user can select another
+      // photo later if they discard/retake this one.
+      selectingRef.current = false;
     };
     reader.onerror = () => {
-      setError('Sorry, that image couldn’t be read. Please try another photo.');
+      setError('Sorry, that image couldn\u2019t be read. Please try another photo.');
+      selectingRef.current = false;
     };
     reader.readAsDataURL(file);
   };
 
   const handleUploadPhoto = async (e) => {
-    e.preventDefault();
+    if (e?.preventDefault) e.preventDefault();
     if (!capturedImage || !event || !attendeePassId) {
       setError('Photo and event information are required');
       return;
@@ -355,7 +372,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
               <img src={capturedImage} alt="Captured photo" style={{ maxWidth: '100%', borderRadius: '12px' }} />
             </div>
 
-            <form onSubmit={handleUploadPhoto} className="photo-upload-form">
+            <div className="photo-upload-form">
               <div className="form-field">
                 <label htmlFor="caption">Photo Caption (Optional)</label>
                 <input
@@ -383,9 +400,10 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                   ↩️ Retake
                 </button>
                 <button 
-                  type="submit"
+                  type="button"
                   className="btn-primary-large"
                   disabled={uploading}
+                  onClick={handleUploadPhoto}
                 >
                   {uploading ? '📤 Uploading...' : '✓ Upload Photo'}
                 </button>
@@ -394,7 +412,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
               <div className="photo-info-note">
                 <p>💡 <strong>Note:</strong> Your photo will be automatically saved to the event organizer's Google Drive and appear in the event gallery.</p>
               </div>
-            </form>
+            </div>
           </div>
         )}
       </div>
