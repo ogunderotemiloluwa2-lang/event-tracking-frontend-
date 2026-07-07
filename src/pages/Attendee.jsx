@@ -119,12 +119,12 @@ function Attendee({ user, onNavigate }) {
                         </span>
                       </div>
                       <div className="my-event-card-meta">
-                        <span>📅 {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                        <span>📍 {event.location || 'TBA'}</span>
+                        <span>{new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span>{event.location || 'TBA'}</span>
                       </div>
                       {!isExpanded && (
                         <div className="my-event-card-preview">
-                          <span>👥 {event.attendees?.length || 0} registered</span>
+                          <span>{event.attendees?.length || 0} registered</span>
                           <span className="expand-hint">Tap for details ▼</span>
                         </div>
                       )}
@@ -134,29 +134,29 @@ function Attendee({ user, onNavigate }) {
                       <div className="my-event-card-details">
                         <div className="my-event-details-grid">
                           <div className="detail-item">
-                            <span className="detail-label">🏢 Venue</span>
+                            <span className="detail-label">Venue</span>
                             <span className="detail-value">{event.venue || 'Not specified'}</span>
                           </div>
                           <div className="detail-item">
-                            <span className="detail-label">🕐 Time</span>
+                            <span className="detail-label">Time</span>
                             <span className="detail-value">
                               {event.startTime || 'TBA'}{event.endTime ? ` - ${event.endTime}` : ''}
                             </span>
                           </div>
                           <div className="detail-item">
-                            <span className="detail-label">⏰ Time Zone</span>
+                            <span className="detail-label">Time Zone</span>
                             <span className="detail-value">{event.timeZone || 'UTC'}</span>
                           </div>
                           <div className="detail-item">
-                            <span className="detail-label">👔 Dress Code</span>
+                            <span className="detail-label">Dress Code</span>
                             <span className="detail-value">{event.dressCode || 'No dress code'}</span>
                           </div>
                           <div className="detail-item">
-                            <span className="detail-label">🔞 Age Restriction</span>
+                            <span className="detail-label">Age Restriction</span>
                             <span className="detail-value">{event.ageRestriction || 'All ages'}</span>
                           </div>
                           <div className="detail-item">
-                            <span className="detail-label">👥 Capacity</span>
+                            <span className="detail-label">Capacity</span>
                             <span className="detail-value">{event.attendees?.length || 0} / {event.capacity || '∞'}</span>
                           </div>
                         </div>
@@ -188,7 +188,7 @@ function Attendee({ user, onNavigate }) {
                               onNavigate('event-details', { passId: event.passId });
                             }}
                           >
-                            📋 View Full Details
+                            View Full Details
                           </button>
                           <button
                             className="btn-action btn-delete"
@@ -198,7 +198,7 @@ function Attendee({ user, onNavigate }) {
                             }}
                             disabled={isLeaving}
                           >
-                            {isLeaving ? 'Leaving...' : '🚪 Leave Event'}
+                            {isLeaving ? 'Leaving...' : 'Leave Event'}
                           </button>
                         </div>
                       </div>
@@ -212,7 +212,7 @@ function Attendee({ user, onNavigate }) {
           {/* Empty state */}
           {myEvents.length === 0 && !error && (
             <div className="empty-state" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎫</div>
+              <div className="empty-icon-large">No Events</div>
               <h3>No Events Yet</h3>
               <p style={{ color: '#666', margin: '0.5rem 0 1.5rem' }}>
                 Join an event using a pass ID from your organizer
@@ -228,7 +228,7 @@ function Attendee({ user, onNavigate }) {
                 onClick={() => setShowJoinForm(true)}
                 style={{ width: '100%' }}
               >
-                ➕ Join New Event
+                Join New Event
               </button>
             ) : (
               <div className="step-container pass-step" style={{ marginTop: '1rem' }}>

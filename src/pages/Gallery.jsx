@@ -21,10 +21,6 @@ function Gallery({ user }) {
     try {
       setLoading(true);
 
-      // Show only relevant events based on user role:
-      //   - Attendee → only events they joined
-      //   - Organizer → only their own events
-      //   - Unauthenticated → all public events
       let eventsData;
       if (user?.role === 'attendee') {
         const resp = await getUserEvents();
@@ -37,8 +33,6 @@ function Gallery({ user }) {
         eventsData = resp.data || [];
       }
 
-      // Deduplicate by title+date — the database has duplicate entries
-      // (same event created twice with different _id values)
       const seen = new Set();
       const uniqueEvents = eventsData.filter(e => {
         const key = `${e.title}|${e.date}`;
@@ -48,7 +42,6 @@ function Gallery({ user }) {
       });
       setEvents(uniqueEvents);
       
-      // Fetch photos for each event from the new endpoint
       const allPhotos = [];
       const contributorsSet = new Set();
       
@@ -123,7 +116,7 @@ function Gallery({ user }) {
       <header className="gallery-header">
         <div className="gallery-hero">
           <h1>Event Gallery</h1>
-          <p>Memories from recent events - captured and shared by attendees</p>
+          <p>Memories captured and shared by attendees</p>
         </div>
       </header>
 
@@ -161,13 +154,13 @@ function Gallery({ user }) {
               className={`view-option ${viewMode === 'grid' ? 'active' : ''}`}
               onClick={() => setViewMode('grid')}
             >
-              📷 Masonry Grid
+              Grid View
             </button>
             <button 
               className={`view-option ${viewMode === 'timeline' ? 'active' : ''}`}
               onClick={() => setViewMode('timeline')}
             >
-              📋 Timeline View
+              Timeline View
             </button>
           </div>
         </div>
@@ -179,15 +172,15 @@ function Gallery({ user }) {
           </div>
         ) : error ? (
           <div className="gallery-error">
-            <span className="error-icon">⚠️</span>
+            <span className="error-icon">!</span>
             <p>{error}</p>
             <button className="btn-secondary" onClick={loadGalleryData}>Retry</button>
           </div>
         ) : filteredPhotos.length === 0 ? (
           <div className="gallery-empty">
-            <div className="empty-icon">📸</div>
-            <h3>No photos yet</h3>
-            <p>Photos uploaded by attendees will appear here. Share your event pass with guests so they can start capturing memories!</p>
+            <div className="empty-icon">No Photos Yet</div>
+            <h3>No photos in this gallery</h3>
+            <p>Photos uploaded by attendees will appear here. Share your event pass with guests so they can start capturing memories.</p>
           </div>
         ) : (
           <>
@@ -199,13 +192,13 @@ function Gallery({ user }) {
                       {photo.thumbnailUrl ? (
                         <img src={photo.thumbnailUrl} alt={photo.caption} className="gallery-photo-img" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="photo-placeholder">📷</div>
+                        <div className="photo-placeholder">No Preview</div>
                       )}
                       <div className="photo-overlay">
                         <div className="overlay-content">
                           <p className="photo-caption">{photo.caption}</p>
-                          <span className="photo-uploader">👤 {photo.uploader || 'Anonymous'}</span>
-                          <span className="photo-time">🕐 {photo.timestamp}</span>
+                          <span className="photo-uploader">{photo.uploader || 'Anonymous'}</span>
+                          <span className="photo-time">{photo.timestamp}</span>
                           <span className="photo-event-name">{photo.eventTitle}</span>
                         </div>
                       </div>
@@ -237,10 +230,10 @@ function Gallery({ user }) {
                       {photo.thumbnailUrl ? (
                         <img src={photo.thumbnailUrl} alt={photo.caption} className="gallery-photo-img" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="photo-preview">📷</div>
+                        <div className="photo-preview">No Preview</div>
                       )}
                       <div className="card-footer">
-                        <span className="uploader">👤 Captured by {photo.uploader || 'Anonymous'}</span>
+                        <span className="uploader">Captured by {photo.uploader || 'Anonymous'}</span>
                         <span className="event-label">{photo.eventTitle}</span>
                       </div>
                     </div>
@@ -255,20 +248,20 @@ function Gallery({ user }) {
         {lightboxPhoto && (
           <div className="lightbox-overlay" onClick={() => setLightboxPhoto(null)}>
             <div className="lightbox-content" onClick={e => e.stopPropagation()}>
-              <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>✕</button>
+              <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>Close</button>
               {lightboxPhoto.thumbnailUrl ? (
                 <img src={lightboxPhoto.downloadUrl || lightboxPhoto.thumbnailUrl} alt={lightboxPhoto.caption} className="lightbox-image" />
               ) : (
-                <div className="lightbox-placeholder">📷</div>
+                <div className="lightbox-placeholder">No Preview</div>
               )}
               <div className="lightbox-info">
                 <h3>{lightboxPhoto.caption}</h3>
-                <p>👤 {lightboxPhoto.uploader || 'Anonymous'}</p>
-                <p>📅 {lightboxPhoto.timestamp}</p>
-                <p>🎪 {lightboxPhoto.eventTitle}</p>
+                <p>Uploaded by {lightboxPhoto.uploader || 'Anonymous'}</p>
+                <p>{lightboxPhoto.timestamp}</p>
+                <p>{lightboxPhoto.eventTitle}</p>
                 {lightboxPhoto.downloadUrl && (
                   <a href={lightboxPhoto.downloadUrl} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-block', marginTop: '1rem', textDecoration: 'none' }}>
-                    📥 Download Full Size
+                    Download Full Size
                   </a>
                 )}
               </div>
@@ -280,7 +273,7 @@ function Gallery({ user }) {
         {deleteConfirm && (
           <div className="lightbox-overlay" onClick={() => setDeleteConfirm(null)}>
             <div className="lightbox-content delete-confirm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', padding: '2rem' }}>
-              <h3>🗑️ Delete Event?</h3>
+              <h3>Delete Event?</h3>
               <p style={{ margin: '1rem 0', color: '#ccc' }}>
                 This will remove the event from the gallery. Photos in Google Drive will not be affected.
               </p>
@@ -291,7 +284,7 @@ function Gallery({ user }) {
                   onClick={() => handleDeleteEvent(deleteConfirm)}
                   disabled={deleting}
                 >
-                  {deleting ? 'Deleting…' : 'Yes, Delete Event'}
+                  {deleting ? 'Deleting...' : 'Yes, Delete Event'}
                 </button>
                 <button
                   type="button"
@@ -317,9 +310,9 @@ function Gallery({ user }) {
                   <div key={event._id} className="gallery-event-card">
                     <div className="gallery-event-card-info">
                       <h3>{event.title}</h3>
-                      <p>📅 {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                      <p>📍 {event.location || 'No location'}</p>
-                      <p>📸 {eventPhotoCount} photo{eventPhotoCount !== 1 ? 's' : ''}</p>
+                      <p>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      <p>{event.location || 'No location'}</p>
+                      <p>{eventPhotoCount} photo{eventPhotoCount !== 1 ? 's' : ''}</p>
                     </div>
                     <div className="gallery-event-card-actions">
                       {user?.role === 'organizer' && (
@@ -327,7 +320,7 @@ function Gallery({ user }) {
                           className="btn-action btn-delete"
                           onClick={() => setDeleteConfirm(event._id)}
                         >
-                          🗑️ Delete
+                          Delete
                         </button>
                       )}
                     </div>
@@ -339,27 +332,30 @@ function Gallery({ user }) {
         )}
 
         <div className="gallery-actions-section">
-          <button className="action-btn primary" onClick={() => {
-            if (events.length > 0) {
-              const firstEvent = events[0];
-              window.location.href = `/?page=photo-upload&eventId=${firstEvent._id}`;
-            } else {
-              alert('Create an event first to upload photos.');
-            }
-          }}>
-            📤 Upload Your Photos
+          <button 
+            className="action-btn take-photo-btn" 
+            onClick={() => {
+              if (events.length > 0) {
+                const firstEvent = events[0];
+                window.location.href = `/?page=photo-upload&eventId=${firstEvent._id}`;
+              } else {
+                alert('Create an event first to upload photos.');
+              }
+            }}
+          >
+            <span className="action-icon">+</span>
+            Take Photo
           </button>
           <button className="action-btn secondary" onClick={() => {
             if (photos.length === 0) {
               alert('No photos to download.');
               return;
             }
-            // Open all download links in new tabs
             photos.forEach(photo => {
               if (photo.downloadUrl) window.open(photo.downloadUrl, '_blank');
             });
           }}>
-            📥 Download All
+            Download All
           </button>
           <button className="action-btn secondary" onClick={() => {
             const url = window.location.href;
@@ -371,12 +367,12 @@ function Gallery({ user }) {
               window.prompt('Copy this gallery link:', url);
             }
           }}>
-            🔗 Share This Gallery
+            Share Gallery
           </button>
         </div>
 
         <footer className="gallery-info">
-          <p>📁 All photos are automatically organized and backed up to secure cloud storage</p>
+          <p>All photos are automatically organised and backed up to secure cloud storage</p>
         </footer>
       </main>
     </div>

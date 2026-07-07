@@ -615,7 +615,7 @@ function Dashboard({ user, onNavigate }) {
                       }}
                       title="Copy or share event link"
                     >
-                      📤 Share Event Link
+                      Share Event Link
                     </button>
                   </div>
 
@@ -703,7 +703,7 @@ function Dashboard({ user, onNavigate }) {
                         handleEditClick(event);
                       }}
                     >
-                      ✏️ Edit Event
+                      Edit Event
                     </button>
                     <button
                       className="btn-action btn-delete"
@@ -712,7 +712,7 @@ function Dashboard({ user, onNavigate }) {
                         setDeleteConfirm(event._id);
                       }}
                     >
-                      🗑️ Delete Event
+                      Delete Event
                     </button>
                   </div>
                 </div>

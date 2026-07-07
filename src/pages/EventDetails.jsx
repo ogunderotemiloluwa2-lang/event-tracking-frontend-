@@ -78,7 +78,6 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
       <div className="event-details-page">
         <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="error-state">
-          <div className="error-icon">❌</div>
           <h2>Event Not Found</h2>
           <p>{error || 'The pass ID does not match any event.'}</p>
           <button className="btn-secondary" onClick={onBack}>Back to Home</button>
@@ -99,17 +98,17 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
 
         <div className="event-info-grid">
           <div className="info-card">
-            <div className="info-label">📍 Location</div>
+            <div className="info-label">Location</div>
             <div className="info-value">{event.location || 'TBA'}</div>
           </div>
 
           <div className="info-card">
-            <div className="info-label">🏢 Venue</div>
+            <div className="info-label">Venue</div>
             <div className="info-value">{event.venue || 'Not specified'}</div>
           </div>
 
           <div className="info-card">
-            <div className="info-label">📅 Date</div>
+            <div className="info-label">Date</div>
             <div className="info-value">
               {new Date(event.date).toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -121,7 +120,7 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
           </div>
 
           <div className="info-card">
-            <div className="info-label">🕐 Start Time</div>
+            <div className="info-label">Start Time</div>
             <div className="info-value">
               {event.startTime ? event.startTime : new Date(event.date).toLocaleTimeString('en-US', {
                 hour: '2-digit',
@@ -132,27 +131,27 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
           </div>
 
           <div className="info-card">
-            <div className="info-label">🛑 End Time</div>
+            <div className="info-label">End Time</div>
             <div className="info-value">{event.endTime || 'TBA'}</div>
           </div>
 
           <div className="info-card">
-            <div className="info-label">⏰ Time Zone</div>
+            <div className="info-label">Time Zone</div>
             <div className="info-value">{event.timeZone || 'UTC'}</div>
           </div>
 
           <div className="info-card">
-            <div className="info-label">👔 Dress Code</div>
+            <div className="info-label">Dress Code</div>
             <div className="info-value">{event.dressCode || 'No dress code'}</div>
           </div>
 
           <div className="info-card">
-            <div className="info-label">🔞 Age Restriction</div>
+            <div className="info-label">Age Restriction</div>
             <div className="info-value">{event.ageRestriction || 'All ages welcome'}</div>
           </div>
 
           <div className="info-card">
-            <div className="info-label">👥 Capacity</div>
+            <div className="info-label">Capacity</div>
             <div className="info-value">
               {event.attendees?.length || 0} / {event.capacity || '∞'}
             </div>
@@ -204,13 +203,13 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
                   className="btn-primary"
                   onClick={() => downloadPassImage({ event, passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber() })}
                 >
-                  🖼️ Download Pass (Image)
+                  Download Pass (Image)
                 </button>
                 <button
                   className="btn-secondary"
                   onClick={() => downloadPassPdf({ event, passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber() })}
                 >
-                  📄 Download Pass (PDF)
+                  Download Pass (PDF)
                 </button>
               </div>
               {onNavigate && (
@@ -219,7 +218,7 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
                   onClick={() => onNavigate('photo-upload', { event, attendeePassId: passId })}
                   style={{ marginTop: '16px' }}
                 >
-                  📸 Upload Event Photos
+                  Upload Event Photos
                 </button>
               )}
             </div>

@@ -1025,6 +1025,8 @@ body {
   flex-direction: column;
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1410 0%, #2d2420 100%);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .gallery-header {
@@ -1061,6 +1063,7 @@ body {
   margin: 0 auto;
   width: 100%;
   touch-action: pan-y pinch-zoom;
+  overscroll-behavior: contain;
 }
 
 .gallery-toolbar {
@@ -1175,6 +1178,7 @@ body {
   gap: 24px;
   margin-bottom: 40px;
   touch-action: pan-y;
+  will-change: scroll-position;
 }
 
 .masonry-item {
@@ -1403,6 +1407,41 @@ body {
   margin-bottom: 40px;
 }
 
+.take-photo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 6px 20px rgba(217, 119, 6, 0.3);
+  min-width: 160px;
+}
+
+.take-photo-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(217, 119, 6, 0.4);
+}
+
+.action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .gallery-actions-section .action-btn {
   padding: 14px 28px;
   border: none;
@@ -1434,6 +1473,84 @@ body {
 .gallery-actions-section .action-btn.secondary:hover {
   background: rgba(217, 119, 6, 0.15);
   border-color: var(--primary);
+}
+
+.btn-delete-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1.5px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  min-height: 50px;
+  flex: 1;
+}
+
+.btn-delete-photo:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  transform: translateY(-1px);
+}
+
+.btn-delete-photo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.photo-actions {
+  gap: 12px !important;
+}
+
+.photo-actions .btn-primary-large {
+  flex: 1;
+}
+
+.photo-preview-container {
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  border: 2px solid rgba(217, 119, 6, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.photo-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  max-height: 400px;
+}
+
+.empty-icon-large {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 1rem;
+  opacity: 0.6;
+  letter-spacing: 0.5px;
+}
+
+.btn-camera-native {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+}
+
+.btn-camera-native:hover {
+  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.3) !important;
+}
+
+.camera-btn-switch,
+.camera-btn-close {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
 }
 
 /* Gallery Info Footer */
@@ -3001,12 +3118,12 @@ body {
   /* NO HORIZONTAL SCROLLING - FORCE 100% WIDTH */
   html, body {
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .app {
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 }
 

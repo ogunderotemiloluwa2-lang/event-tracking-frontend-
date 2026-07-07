@@ -17,24 +17,20 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [facingMode, setFacingMode] = useState('environment');
-  const capturingRef = useRef(false); // Prevents double-capture race condition
-  const uploadingRef = useRef(false); // Prevents double-submit race condition
-  const selectingRef = useRef(false); // Prevents double-file-select race condition (Android camera fires change event twice)
+  const capturingRef = useRef(false);
+  const uploadingRef = useRef(false);
+  const selectingRef = useRef(false);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
-  // Restore draft fields so switching apps to find the event code doesn't lose data.
   const [photoCaption, setPhotoCaption] = useState(() => {
     try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.photoCaption || ''; } catch { return ''; }
   });
-  // Name & email removed — only photo + optional caption
 
-  // Persist draft fields to localStorage so they survive page refreshes.
   useEffect(() => {
     try {
       localStorage.setItem(PHOTO_DRAFT_KEY, JSON.stringify({ photoCaption }));
     } catch { /* ignore quota errors */ }
   }, [photoCaption]);
 
-  // Detect how many cameras are available so we can show/hide the switch button.
   useEffect(() => {
     if (navigator.mediaDevices?.enumerateDevices) {
       navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -44,31 +40,25 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   }, []);
 
   const startCamera = useCallback(async () => {
-    // getUserMedia only exists in a secure context (https:// or localhost).
-    // When a guest opens a shared link over plain http on their phone the API
-    // is simply missing, which previously left the button doing nothing.
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setError('Your browser can\u2019t open the camera here. This usually means the page isn\u2019t on a secure (https) link. Use \u201cChoose from Gallery\u201d below, or open the link in Chrome/Safari over https.');
+      setError('Your browser cannot open the camera here. This usually means the page is not on a secure (https) link. Use "Choose from Gallery" below, or open the link in Chrome/Safari over https.');
       return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
-      // Keep the stream in a ref and flip the flag so the <video> element gets
-      // rendered. The stream is attached in the effect below once it exists in
-      // the DOM — attaching here failed because videoRef wasn't mounted yet.
       streamRef.current = stream;
       setIsCameraActive(true);
       setError('');
     } catch (err) {
       console.error('Camera error:', err);
       if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
-        setError('Camera permission was blocked. Allow camera access for this site in your browser settings, then try again \u2014 or use \u201cChoose from Gallery\u201d.');
+        setError('Camera permission was blocked. Allow camera access for this site in your browser settings, then try again or use "Choose from Gallery".');
       } else if (err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
-        setError('No camera was found on this device. Use \u201cChoose from Gallery\u201d instead.');
+        setError('No camera was found on this device. Use "Choose from Gallery" instead.');
       } else {
-        setError('Unable to open the camera. Use \u201cChoose from Gallery\u201d, or check your browser camera permissions.');
+        setError('Unable to open the camera. Use "Choose from Gallery" or check your browser camera permissions.');
       }
     }
   }, [facingMode]);
@@ -85,7 +75,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   };
 
   const switchCamera = async () => {
-    // Stop current stream first
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -93,16 +82,13 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    // Flip facing mode
     const newMode = facingMode === 'environment' ? 'user' : 'environment';
     setFacingMode(newMode);
-    // Re-acquire stream with new facing mode
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: newMode, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
       streamRef.current = stream;
-      // Re-attach to video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play?.().catch(() => {});
@@ -113,8 +99,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     }
   };
 
-  // Attach the live stream once the <video> element is actually on screen, and
-  // make sure the camera is released if the user leaves the page.
   useEffect(() => {
     if (isCameraActive && !capturedImage && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
@@ -131,8 +115,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   }, []);
 
   const capturePhoto = () => {
-    // Prevent double-capture race condition — if the user taps the button twice
-    // quickly, only the first capture is processed.
     if (capturingRef.current) return;
     capturingRef.current = true;
 
@@ -152,8 +134,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.9);
 
-      // The frame is already on the canvas, so release the camera immediately —
-      // otherwise the device's camera light/feed stays on during review.
       stopCamera();
     } else {
       capturingRef.current = false;
@@ -161,15 +141,10 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
   };
 
   const handleFileSelect = (e) => {
-    // On some Android phones, the camera input fires the change event TWICE.
-    // The first call is the photo from the camera. The second call is triggered
-    // when Android saves the photo to the gallery. Guard with a ref so only the
-    // first event is processed and the duplicate is silently dropped.
     if (selectingRef.current) return;
     selectingRef.current = true;
 
     const file = e.target.files && e.target.files[0];
-    // Reset the input value so picking the SAME image again still fires onChange.
     if (e.target.value !== undefined) {
       e.target.value = '';
     }
@@ -180,12 +155,11 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     }
 
     if (!file.type || !file.type.startsWith('image/')) {
-      setError('That file isn\u2019t an image. Please choose a photo (JPG, PNG, etc.).');
+      setError('That file is not an image. Please choose a photo (JPG, PNG, etc.).');
       selectingRef.current = false;
       return;
     }
 
-    // Guard very large files so the upload doesn't silently fail on slow links.
     if (file.size > 15 * 1024 * 1024) {
       setError('That image is larger than 15 MB. Please choose a smaller photo.');
       selectingRef.current = false;
@@ -196,12 +170,10 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     reader.onload = () => {
       setCapturedImage(reader.result);
       setError('');
-      // Reset the guard after the image is set, so the user can select another
-      // photo later if they discard/retake this one.
       selectingRef.current = false;
     };
     reader.onerror = () => {
-      setError('Sorry, that image couldn\u2019t be read. Please try another photo.');
+      setError('Sorry, that image could not be read. Please try another photo.');
       selectingRef.current = false;
     };
     reader.readAsDataURL(file);
@@ -214,7 +186,6 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       return;
     }
 
-    // Prevent double-submit — if already uploading, ignore the click.
     if (uploadingRef.current) return;
     uploadingRef.current = true;
     setUploading(true);
@@ -222,19 +193,15 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     setSuccessMessage('');
 
     try {
-      // Convert data URL to Blob
       const response = await fetch(capturedImage);
       const blob = await response.blob();
       
-      // Use timestamp + random suffix so two photos taken in the same
-      // millisecond never collide / overwrite each other in Google Drive.
       const uniqueSuffix = Math.random().toString(36).substring(2, 8);
       const file = new File([blob], `photo-${Date.now()}-${uniqueSuffix}.jpg`, { type: 'image/jpeg' });
 
       console.log('About to upload with event._id:', event?._id);
       console.log('Full event object:', event);
 
-      // Upload photo with metadata
       const uploadResponse = await uploadPhoto(
         event._id, 
         attendeePassId, 
@@ -243,28 +210,22 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
       );
 
       if (uploadResponse.data) {
-        setSuccessMessage('✅ Photo uploaded successfully to Google Drive!');
+        setSuccessMessage('Photo uploaded successfully to Google Drive!');
         setCapturedImage(null);
         setPhotoCaption('');
-        // Clear the saved draft so a fresh upload starts clean.
         try { localStorage.removeItem(PHOTO_DRAFT_KEY); } catch { /* ignore */ }
         
-        // Call callback if provided
         if (onUploadSuccess) {
           onUploadSuccess(uploadResponse.data);
         }
 
-        // Reset after 3 seconds
         setTimeout(() => {
           setSuccessMessage('');
         }, 3000);
       }
     } catch (err) {
-      // Surface the real backend reason so the attendee/organizer sees the
-      // actionable cause (e.g. "organizer hasn't connected Google Drive").
       const data = err.response?.data || {};
       let serverMsg = data.message || data.details || data.error || '';
-      // Append the raw Google detail when it adds something beyond the message.
       if (data.error && data.message && !data.message.includes(data.error)) {
         serverMsg = `${data.message} (${data.error})`;
       }
@@ -286,10 +247,10 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
     <div className="photo-upload-page">
       <div className="photo-upload-container">
         <div className="photo-upload-header">
-          <h2>📸 Capture Event Moment</h2>
+          <h2>Capture Event Moment</h2>
           <p>Share your photos from {event?.title}</p>
           {onBack && (
-            <button className="btn-back" onClick={onBack}>← Back</button>
+            <button className="btn-back" onClick={onBack}>Back</button>
           )}
         </div>
 
@@ -299,15 +260,13 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
               {!isCameraActive ? (
                 <>
                   <button className="btn-primary-large" onClick={startCamera}>
-                    📱 Open In-Browser Camera
+                    Open In-Browser Camera
                   </button>
                   <div className="divider">or</div>
                   {/* Native phone camera — opens the device's own camera app on mobile */}
                   <button
-                    className="btn-primary-large"
-                    style={{ background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)' }}
+                    className="btn-primary-large btn-camera-native"
                     onClick={() => {
-                      // Use capture attribute to open native camera directly
                       const input = document.createElement('input');
                       input.type = 'file';
                       input.accept = 'image/*';
@@ -316,7 +275,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                       input.click();
                     }}
                   >
-                    📷 Use Phone Camera
+                    Use Phone Camera
                   </button>
                 </>
               ) : null}
@@ -327,7 +286,7 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                 className="btn-secondary-large"
                 onClick={() => fileInputRef.current?.click()}
               >
-                📁 Choose from Gallery
+                Choose from Gallery
               </button>
               <input
                 ref={fileInputRef}
@@ -348,15 +307,15 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                 />
                 <div className="camera-controls-overlay">
                   {hasMultipleCameras && (
-                    <button className="camera-btn" onClick={switchCamera} title="Switch Camera">
-                      🔄 Switch
+                    <button className="camera-btn camera-btn-switch" onClick={switchCamera} title="Switch Camera">
+                      Switch
                     </button>
                   )}
                   <button className="camera-btn camera-btn-capture" onClick={capturePhoto} title="Capture">
-                        📸
+                    Capture
                   </button>
-                  <button className="camera-btn" onClick={stopCamera} title="Close Camera">
-                    ✕ Close
+                  <button className="camera-btn camera-btn-close" onClick={stopCamera} title="Close Camera">
+                    Close
                   </button>
                 </div>
               </div>
@@ -368,8 +327,8 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
           </div>
         ) : (
           <div className="photo-review-section">
-            <div className="photo-preview">
-              <img src={capturedImage} alt="Captured photo" style={{ maxWidth: '100%', borderRadius: '12px' }} />
+            <div className="photo-preview-container">
+              <img src={capturedImage} alt="Captured photo" className="photo-preview-image" />
             </div>
 
             <div className="photo-upload-form">
@@ -390,14 +349,14 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
               {error && <div className="error-alert">{error}</div>}
               {successMessage && <div className="success-alert">{successMessage}</div>}
 
-              <div className="form-actions">
+              <div className="form-actions photo-actions">
                 <button 
                   type="button"
-                  className="btn-secondary-large"
+                  className="btn-delete-photo"
                   onClick={discardPhoto}
                   disabled={uploading}
                 >
-                  ↩️ Retake
+                  Delete Photo
                 </button>
                 <button 
                   type="button"
@@ -405,12 +364,12 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
                   disabled={uploading}
                   onClick={handleUploadPhoto}
                 >
-                  {uploading ? '📤 Uploading...' : '✓ Upload Photo'}
+                  {uploading ? 'Uploading...' : 'Upload Photo'}
                 </button>
               </div>
 
               <div className="photo-info-note">
-                <p>💡 <strong>Note:</strong> Your photo will be automatically saved to the event organizer's Google Drive and appear in the event gallery.</p>
+                <p><strong>Note:</strong> Your photo will be automatically saved to the event organizer's Google Drive and appear in the event gallery.</p>
               </div>
             </div>
           </div>
