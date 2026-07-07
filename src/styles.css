@@ -1060,6 +1060,7 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  touch-action: pan-y pinch-zoom;
 }
 
 .gallery-toolbar {
@@ -1173,12 +1174,13 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
   margin-bottom: 40px;
+  touch-action: pan-y;
 }
 
 .masonry-item {
   display: flex;
   border-radius: 14px;
-  overflow: hidden;
+  isolation: isolate;
   transition: var(--transition);
 }
 
