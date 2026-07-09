@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getEvents, getEventPhotos, deleteEvent, getOrganizerEvents, getUserEvents } from '../services/api';
 
 function Gallery({ user, onNavigate }) {
@@ -12,6 +12,11 @@ function Gallery({ user, onNavigate }) {
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [brokenImages, setBrokenImages] = useState(new Set());
+
+  const markBroken = useCallback((photoId) => {
+    setBrokenImages(prev => new Set([...prev, photoId]));
+  }, []);
 
   useEffect(() => {
     loadGalleryData();
@@ -196,16 +201,16 @@ function Gallery({ user, onNavigate }) {
                 {filteredPhotos.map((photo, idx) => (
                   <div key={photo.id} className={`masonry-item ${idx % 3 === 0 ? 'large' : idx % 5 === 0 ? 'wide' : ''}`}>
                     <div className="photo-container" onClick={() => setLightboxPhoto(photo)}>
-                      {photo.thumbnailUrl ? (
+                      {brokenImages.has(photo.id) || !photo.thumbnailUrl ? (
+                        <div className="photo-placeholder">No Preview</div>
+                      ) : (
                         <img 
                           src={photo.thumbnailUrl} 
                           alt={photo.caption} 
                           className="gallery-photo-img" 
                           referrerPolicy="no-referrer"
-                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.photo-placeholder')?.classList.remove('hidden'); }}
+                          onError={() => markBroken(photo.id)}
                         />
-                      ) : (
-                        <div className="photo-placeholder">No Preview</div>
                       )}
                       <div className="photo-overlay">
                         <div className="overlay-content">
@@ -240,16 +245,16 @@ function Gallery({ user, onNavigate }) {
                         <h3>{photo.caption}</h3>
                         <span className="card-time">{photo.timestamp}</span>
                       </div>
-                      {photo.thumbnailUrl ? (
+                      {brokenImages.has(photo.id) || !photo.thumbnailUrl ? (
+                        <div className="photo-preview">No Preview</div>
+                      ) : (
                         <img 
                           src={photo.thumbnailUrl} 
                           alt={photo.caption} 
                           className="gallery-photo-img" 
                           referrerPolicy="no-referrer"
-                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.photo-preview')?.classList.remove('hidden'); }}
+                          onError={() => markBroken(photo.id)}
                         />
-                      ) : (
-                        <div className="photo-preview hidden">No Preview</div>
                       )}
                       <div className="card-footer">
                         <span className="uploader">Captured by {photo.uploader || 'Anonymous'}</span>
@@ -268,19 +273,15 @@ function Gallery({ user, onNavigate }) {
           <div className="lightbox-overlay" onClick={() => setLightboxPhoto(null)}>
             <div className="lightbox-content" onClick={e => e.stopPropagation()}>
               <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>Close</button>
-              {lightboxPhoto.thumbnailUrl ? (
+              {brokenImages.has(lightboxPhoto.id) || !lightboxPhoto.thumbnailUrl ? (
+                <div className="lightbox-placeholder">No Preview</div>
+              ) : (
                 <img 
                   src={lightboxPhoto.downloadUrl || lightboxPhoto.thumbnailUrl} 
                   alt={lightboxPhoto.caption} 
                   className="lightbox-image"
-                  onError={(e) => { 
-                    e.target.style.display = 'none'; 
-                    const placeholder = document.querySelector('.lightbox-placeholder');
-                    if (placeholder) placeholder.classList.remove('hidden');
-                  }}
+                  onError={() => markBroken(lightboxPhoto.id)}
                 />
-              ) : (
-                <div className="lightbox-placeholder">No Preview</div>
               )}
               <div className="lightbox-info">
                 <h3>{lightboxPhoto.caption}</h3>
