@@ -44,6 +44,7 @@ function Gallery({ user, onNavigate }) {
       
       const allPhotos = [];
       const contributorsSet = new Set();
+      const seenPhotoIds = new Set();
       
       for (const event of uniqueEvents) {
         try {
@@ -51,8 +52,14 @@ function Gallery({ user, onNavigate }) {
           const eventPhotos = photosResponse.data?.photos || [];
           
           eventPhotos.forEach((photo) => {
+            const photoId = photo.photoId || photo.id;
+            // Dedup by photo ID — prevents the same photo from showing twice
+            // if an event appears in multiple lists
+            if (seenPhotoIds.has(photoId)) return;
+            seenPhotoIds.add(photoId);
+            
             allPhotos.push({
-              id: photo.photoId,
+              id: photoId,
               eventId: event._id,
               eventTitle: event.title,
               caption: photo.photoCaption || photo.fileName,
@@ -190,7 +197,13 @@ function Gallery({ user, onNavigate }) {
                   <div key={photo.id} className={`masonry-item ${idx % 3 === 0 ? 'large' : idx % 5 === 0 ? 'wide' : ''}`}>
                     <div className="photo-container" onClick={() => setLightboxPhoto(photo)}>
                       {photo.thumbnailUrl ? (
-                        <img src={photo.thumbnailUrl} alt={photo.caption} className="gallery-photo-img" referrerPolicy="no-referrer" />
+                        <img 
+                          src={photo.thumbnailUrl} 
+                          alt={photo.caption} 
+                          className="gallery-photo-img" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.photo-placeholder')?.classList.remove('hidden'); }}
+                        />
                       ) : (
                         <div className="photo-placeholder">No Preview</div>
                       )}
@@ -228,9 +241,15 @@ function Gallery({ user, onNavigate }) {
                         <span className="card-time">{photo.timestamp}</span>
                       </div>
                       {photo.thumbnailUrl ? (
-                        <img src={photo.thumbnailUrl} alt={photo.caption} className="gallery-photo-img" referrerPolicy="no-referrer" />
+                        <img 
+                          src={photo.thumbnailUrl} 
+                          alt={photo.caption} 
+                          className="gallery-photo-img" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.photo-preview')?.classList.remove('hidden'); }}
+                        />
                       ) : (
-                        <div className="photo-preview">No Preview</div>
+                        <div className="photo-preview hidden">No Preview</div>
                       )}
                       <div className="card-footer">
                         <span className="uploader">Captured by {photo.uploader || 'Anonymous'}</span>
@@ -250,7 +269,16 @@ function Gallery({ user, onNavigate }) {
             <div className="lightbox-content" onClick={e => e.stopPropagation()}>
               <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>Close</button>
               {lightboxPhoto.thumbnailUrl ? (
-                <img src={lightboxPhoto.downloadUrl || lightboxPhoto.thumbnailUrl} alt={lightboxPhoto.caption} className="lightbox-image" />
+                <img 
+                  src={lightboxPhoto.downloadUrl || lightboxPhoto.thumbnailUrl} 
+                  alt={lightboxPhoto.caption} 
+                  className="lightbox-image"
+                  onError={(e) => { 
+                    e.target.style.display = 'none'; 
+                    const placeholder = document.querySelector('.lightbox-placeholder');
+                    if (placeholder) placeholder.classList.remove('hidden');
+                  }}
+                />
               ) : (
                 <div className="lightbox-placeholder">No Preview</div>
               )}
