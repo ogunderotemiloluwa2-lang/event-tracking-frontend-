@@ -25,8 +25,9 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
       setLoading(true);
       const response = await getEventByPassId(passId);
       setEvent(response.data);
-      // Check if user already joined
-      const alreadyJoined = response.data.attendees?.some(a => a.userId === user?.id);
+      // Check if user already joined — compare stringified IDs to avoid ObjectId vs string mismatch
+      const userIdStr = String(user?.id || '');
+      const alreadyJoined = response.data.attendees?.some(a => String(a.userId) === userIdStr);
       setIsJoined(alreadyJoined);
     } catch (err) {
       setError('Failed to load event details. Invalid pass ID.');
@@ -39,7 +40,9 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
   // Calculate the attendee's number (1-based index in the attendees array)
   const getAttendeeNumber = () => {
     if (!event?.attendees || !user?.id) return null;
-    const idx = event.attendees.findIndex(a => a.userId === user.id);
+    // Compare stringified IDs to avoid ObjectId vs string mismatch
+    const userIdStr = String(user.id);
+    const idx = event.attendees.findIndex(a => String(a.userId) === userIdStr);
     return idx >= 0 ? idx + 1 : null;
   };
 

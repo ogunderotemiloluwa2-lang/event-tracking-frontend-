@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getEvents, getEventPhotos, deleteEvent, getOrganizerEvents, getUserEvents } from '../services/api';
 
-function Gallery({ user }) {
+function Gallery({ user, onNavigate }) {
   const [filterEvent, setFilterEvent] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [events, setEvents] = useState([]);
@@ -337,7 +337,12 @@ function Gallery({ user }) {
             onClick={() => {
               if (events.length > 0) {
                 const firstEvent = events[0];
-                window.location.href = `/?page=photo-upload&eventId=${firstEvent._id}`;
+                if (onNavigate) {
+                  onNavigate('photo-upload', { 
+                    event: firstEvent, 
+                    attendeePassId: firstEvent.passId 
+                  });
+                }
               } else {
                 alert('Create an event first to upload photos.');
               }
