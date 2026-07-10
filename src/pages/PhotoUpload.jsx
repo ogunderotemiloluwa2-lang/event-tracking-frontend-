@@ -39,6 +39,16 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
     }
   }, []);
 
+  // Callback ref — assigns the stream to the <video> the moment it mounts,
+  // avoiding the timing race of waiting for a useEffect after setIsCameraActive.
+  const setVideoRef = useCallback((node) => {
+    videoRef.current = node;
+    if (node && streamRef.current) {
+      node.srcObject = streamRef.current;
+      node.play().catch(() => {});
+    }
+  }, []);
+
   const startCamera = useCallback(async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setError('Your browser cannot open the camera here. This usually means the page is not on a secure (https) link. Use "Choose from Gallery" below, or open the link in Chrome/Safari over https.');
@@ -100,13 +110,6 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
   };
 
   useEffect(() => {
-    if (isCameraActive && !capturedImage && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-      videoRef.current.play?.().catch(() => {});
-    }
-  }, [isCameraActive, capturedImage]);
-
-  useEffect(() => {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -118,13 +121,18 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
     if (capturingRef.current) return;
     capturingRef.current = true;
 
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext('2d');
-      canvasRef.current.width = videoRef.current.videoWidth;
-      canvasRef.current.height = videoRef.current.videoHeight;
-      context.drawImage(videoRef.current, 0, 0);
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (video && canvas) {
+      // If the video hasn't loaded yet, use a fallback size
+      const width = video.videoWidth || 1280;
+      const height = video.videoHeight || 720;
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, width, height);
 
-      canvasRef.current.toBlob((blob) => {
+      canvas.toBlob((blob) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           setCapturedImage(reader.result);
@@ -141,18 +149,17 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
   };
 
   const handleFileSelect = (e) => {
-    if (selectingRef.current) return;
-    selectingRef.current = true;
-
     const file = e.target.files && e.target.files[0];
-    if (e.target.value !== undefined) {
-      e.target.value = '';
-    }
+
+    // Reset the input value so the same file can be re-selected next time
+    if (e.target) e.target.value = '';
 
     if (!file) {
-      selectingRef.current = false;
       return;
     }
+
+    if (selectingRef.current) return;
+    selectingRef.current = true;
 
     if (!file.type || !file.type.startsWith('image/')) {
       setError('That file is not an image. Please choose a photo (JPG, PNG, etc.).');
@@ -301,7 +308,7 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
             {isCameraActive && (
               <div className="camera-fullscreen">
                 <video 
-                  ref={videoRef}
+                  ref={setVideoRef}
                   autoPlay
                   playsInline
                   muted
