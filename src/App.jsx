@@ -285,6 +285,7 @@ function App() {
           <PhotoUpload 
             event={photoUploadData.event}
             attendeePassId={photoUploadData.attendeePassId}
+            user={user}
             onUploadSuccess={() => handleNavigation('gallery')}
             onBack={() => handleNavigation('gallery')}
           />
@@ -303,7 +304,7 @@ function App() {
               <button className="nav-link" onClick={handleBackToLanding}>Home</button>
             </div>
           </nav>
-          <Gallery user={user} onNavigate={handleNavigation} />
+          <Gallery user={user} />
         </div>
       )}
     </div>

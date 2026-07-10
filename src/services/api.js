@@ -43,13 +43,14 @@ export const removeAttendee = (attendeeId) => api.delete(`/attendees/${attendeeI
 export const checkInAttendeeByPass = (eventId, passId) => api.post(`/attendees/checkin/${eventId}`, { passId });
 
 // Photos API
-export const uploadPhoto = (eventId, passId, file, photoCaption) => {
+export const uploadPhoto = (eventId, passId, file, photoCaption, uploaderName) => {
   console.log('uploadPhoto called with eventId:', eventId);
   console.log('Full URL will be:', `/events/${eventId}/photos`);
   const formData = new FormData();
   formData.append('file', file);
   formData.append('passId', passId);
   formData.append('photoCaption', photoCaption || '');
+  formData.append('uploaderName', uploaderName || 'Guest');
   return api.post(`/events/${eventId}/photos`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });

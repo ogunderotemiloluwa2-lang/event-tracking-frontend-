@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getEvents, getEventPhotos, deleteEvent, getOrganizerEvents, getUserEvents } from '../services/api';
 
-function Gallery({ user, onNavigate }) {
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+function Gallery({ user }) {
   const [filterEvent, setFilterEvent] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [events, setEvents] = useState([]);
@@ -12,11 +14,6 @@ function Gallery({ user, onNavigate }) {
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [brokenImages, setBrokenImages] = useState(new Set());
-
-  const markBroken = useCallback((photoId) => {
-    setBrokenImages(prev => new Set([...prev, photoId]));
-  }, []);
 
   useEffect(() => {
     loadGalleryData();
@@ -49,7 +46,6 @@ function Gallery({ user, onNavigate }) {
       
       const allPhotos = [];
       const contributorsSet = new Set();
-      const seenPhotoIds = new Set();
       
       for (const event of uniqueEvents) {
         try {
@@ -57,14 +53,12 @@ function Gallery({ user, onNavigate }) {
           const eventPhotos = photosResponse.data?.photos || [];
           
           eventPhotos.forEach((photo) => {
-            const photoId = photo.photoId || photo.id;
-            // Dedup by photo ID — prevents the same photo from showing twice
-            // if an event appears in multiple lists
-            if (seenPhotoIds.has(photoId)) return;
-            seenPhotoIds.add(photoId);
-            
+            // Use the backend proxy URL so images load without Google auth issues
+            const proxyUrl = photo.fileId
+              ? `${API_BASE}/events/${event._id}/drive-image/${photo.fileId}`
+              : null;
             allPhotos.push({
-              id: photoId,
+              id: photo.photoId,
               eventId: event._id,
               eventTitle: event.title,
               caption: photo.photoCaption || photo.fileName,
@@ -72,7 +66,8 @@ function Gallery({ user, onNavigate }) {
               uploader: photo.uploaderName,
               fileName: photo.fileName,
               downloadUrl: photo.downloadUrl,
-              thumbnailUrl: photo.thumbnailUrl
+              thumbnailUrl: proxyUrl || photo.thumbnailUrl,
+              fileId: photo.fileId
             });
             if (photo.uploaderName) contributorsSet.add(photo.uploaderName);
           });
@@ -81,9 +76,18 @@ function Gallery({ user, onNavigate }) {
         }
       }
       
-      setPhotos(allPhotos);
+      // Deduplicate photos by fileId to prevent showing the same photo twice
+      const seenFileIds = new Set();
+      const uniquePhotos = allPhotos.filter(photo => {
+        const key = photo.fileId || photo.id;
+        if (seenFileIds.has(key)) return false;
+        seenFileIds.add(key);
+        return true;
+      });
+
+      setPhotos(uniquePhotos);
       setStats({
-        totalPhotos: allPhotos.length,
+        totalPhotos: uniquePhotos.length,
         contributors: contributorsSet.size,
         events: uniqueEvents.length
       });
@@ -201,16 +205,19 @@ function Gallery({ user, onNavigate }) {
                 {filteredPhotos.map((photo, idx) => (
                   <div key={photo.id} className={`masonry-item ${idx % 3 === 0 ? 'large' : idx % 5 === 0 ? 'wide' : ''}`}>
                     <div className="photo-container" onClick={() => setLightboxPhoto(photo)}>
-                      {brokenImages.has(photo.id) || !photo.thumbnailUrl ? (
-                        <div className="photo-placeholder">No Preview</div>
-                      ) : (
-                        <img 
-                          src={photo.thumbnailUrl} 
-                          alt={photo.caption} 
-                          className="gallery-photo-img" 
+                      {photo.thumbnailUrl ? (
+                        <img
+                          src={photo.thumbnailUrl}
+                          alt={photo.caption}
+                          className="gallery-photo-img"
                           referrerPolicy="no-referrer"
-                          onError={() => markBroken(photo.id)}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.classList.add('img-error');
+                          }}
                         />
+                      ) : (
+                        <div className="photo-placeholder">No Preview</div>
                       )}
                       <div className="photo-overlay">
                         <div className="overlay-content">
@@ -245,16 +252,19 @@ function Gallery({ user, onNavigate }) {
                         <h3>{photo.caption}</h3>
                         <span className="card-time">{photo.timestamp}</span>
                       </div>
-                      {brokenImages.has(photo.id) || !photo.thumbnailUrl ? (
-                        <div className="photo-preview">No Preview</div>
-                      ) : (
-                        <img 
-                          src={photo.thumbnailUrl} 
-                          alt={photo.caption} 
-                          className="gallery-photo-img" 
+                      {photo.thumbnailUrl ? (
+                        <img
+                          src={photo.thumbnailUrl}
+                          alt={photo.caption}
+                          className="gallery-photo-img"
                           referrerPolicy="no-referrer"
-                          onError={() => markBroken(photo.id)}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.classList.add('img-error');
+                          }}
                         />
+                      ) : (
+                        <div className="photo-preview">No Preview</div>
                       )}
                       <div className="card-footer">
                         <span className="uploader">Captured by {photo.uploader || 'Anonymous'}</span>
@@ -273,15 +283,10 @@ function Gallery({ user, onNavigate }) {
           <div className="lightbox-overlay" onClick={() => setLightboxPhoto(null)}>
             <div className="lightbox-content" onClick={e => e.stopPropagation()}>
               <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>Close</button>
-              {brokenImages.has(lightboxPhoto.id) || !lightboxPhoto.thumbnailUrl ? (
-                <div className="lightbox-placeholder">No Preview</div>
+              {lightboxPhoto.thumbnailUrl ? (
+                <img src={lightboxPhoto.downloadUrl || lightboxPhoto.thumbnailUrl} alt={lightboxPhoto.caption} className="lightbox-image" />
               ) : (
-                <img 
-                  src={lightboxPhoto.downloadUrl || lightboxPhoto.thumbnailUrl} 
-                  alt={lightboxPhoto.caption} 
-                  className="lightbox-image"
-                  onError={() => markBroken(lightboxPhoto.id)}
-                />
+                <div className="lightbox-placeholder">No Preview</div>
               )}
               <div className="lightbox-info">
                 <h3>{lightboxPhoto.caption}</h3>
@@ -366,12 +371,7 @@ function Gallery({ user, onNavigate }) {
             onClick={() => {
               if (events.length > 0) {
                 const firstEvent = events[0];
-                if (onNavigate) {
-                  onNavigate('photo-upload', { 
-                    event: firstEvent, 
-                    attendeePassId: firstEvent.passId 
-                  });
-                }
+                window.location.href = `/?page=photo-upload&eventId=${firstEvent._id}`;
               } else {
                 alert('Create an event first to upload photos.');
               }

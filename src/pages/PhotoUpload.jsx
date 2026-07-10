@@ -3,7 +3,7 @@ import { uploadPhoto } from '../services/api';
 
 const PHOTO_DRAFT_KEY = 'photoUploadDraft';
 
-function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
+function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
   console.log('PhotoUpload received event:', event);
   console.log('PhotoUpload received attendeePassId:', attendeePassId);
   const [uploading, setUploading] = useState(false);
@@ -206,7 +206,8 @@ function PhotoUpload({ event, attendeePassId, onUploadSuccess, onBack }) {
         event._id, 
         attendeePassId, 
         file,
-        photoCaption
+        photoCaption,
+        user?.name || 'Guest'
       );
 
       if (uploadResponse.data) {

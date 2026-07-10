@@ -1214,6 +1214,12 @@ body {
   cursor: pointer;
 }
 
+.photo-container.img-error::after {
+  content: '📷';
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
 .gallery-photo-img {
   width: 100%;
   height: 100%;
