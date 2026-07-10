@@ -49,6 +49,7 @@ function Dashboard({ user, onNavigate }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [stats, setStats] = useState({ total: 0, confirmed: 0, photos: 0 });
   const [driveConnected, setDriveConnected] = useState(false);
   const [connectingDrive, setConnectingDrive] = useState(false);
@@ -179,6 +180,7 @@ function Dashboard({ user, onNavigate }) {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
+    setFormError('');
     // Prevent double-submit — clicking "Create Event" twice creates duplicates
     if (saving) return;
     setSaving(true);
@@ -186,7 +188,10 @@ function Dashboard({ user, onNavigate }) {
       const response = await createEvent({
         ...formData
       });
-      setEvents([...events, response.data]);
+      const newEvent = response.data;
+      const updatedEvents = [...events, newEvent];
+      setEvents(updatedEvents);
+      calculateStats(updatedEvents);
       setFormData(EMPTY_EVENT_FORM);
       try {
         localStorage.removeItem(EVENT_DRAFT_KEY);
@@ -195,6 +200,8 @@ function Dashboard({ user, onNavigate }) {
       }
       setShowForm(false);
     } catch (error) {
+      const msg = error?.response?.data?.message || error?.response?.data?.hint || error?.message || 'Something went wrong. Please try again.';
+      setFormError(msg);
       console.error('Failed to create event:', error);
     } finally {
       setSaving(false);
@@ -254,6 +261,7 @@ function Dashboard({ user, onNavigate }) {
 
   const handleUpdateEvent = async (e) => {
     e.preventDefault();
+    setFormError('');
     if (!editingEvent || saving) return;
     setSaving(true);
     try {
@@ -261,15 +269,17 @@ function Dashboard({ user, onNavigate }) {
         ...formData
       });
       const updated = response.data;
-      setEvents(prev => prev.map(ev => ev._id === updated._id ? updated : ev));
-      calculateStats(events.map(ev => ev._id === updated._id ? updated : ev));
+      const updatedEvents = events.map(ev => ev._id === updated._id ? updated : ev);
+      setEvents(updatedEvents);
+      calculateStats(updatedEvents);
       setEditingEvent(null);
       setFormData(EMPTY_EVENT_FORM);
       try { localStorage.removeItem(EVENT_DRAFT_KEY); } catch { /* ignore */ }
       setShowForm(false);
     } catch (err) {
+      const msg = err?.response?.data?.message || err?.response?.data?.hint || err?.message || 'Failed to update event. Please try again.';
+      setFormError(msg);
       console.error('Failed to update event:', err);
-      alert('Failed to update event: ' + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }
@@ -555,6 +565,8 @@ function Dashboard({ user, onNavigate }) {
                 </div>
               </div>
 
+              {formError && <div className="error-alert" style={{ margin: '0 0 16px' }}>{formError}</div>}
+
               <div className="form-actions">
                 <button type="submit" className="btn-primary" disabled={saving}>
                   {saving ? 'Saving…' : editingEvent ? 'Update Event' : 'Create Event'}
@@ -563,6 +575,7 @@ function Dashboard({ user, onNavigate }) {
                   setShowForm(false);
                   setEditingEvent(null);
                   setFormData(EMPTY_EVENT_FORM);
+                  setFormError('');
                   try { localStorage.removeItem(EVENT_DRAFT_KEY); } catch { /* ignore */ }
                 }}>
                   {editingEvent ? 'Cancel Edit' : 'Cancel'}
