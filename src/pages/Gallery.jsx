@@ -3,7 +3,7 @@ import { getEvents, getEventPhotos, deleteEvent, getOrganizerEvents, getUserEven
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-function Gallery({ user }) {
+function Gallery({ user, onNavigate }) {
   const [filterEvent, setFilterEvent] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [events, setEvents] = useState([]);
@@ -371,7 +371,13 @@ function Gallery({ user }) {
             onClick={() => {
               if (events.length > 0) {
                 const firstEvent = events[0];
-                window.location.href = `/?page=photo-upload&eventId=${firstEvent._id}`;
+                if (!firstEvent.googleDriveFolderId) {
+                  alert('This event does not have a Google Drive folder configured. Go to your Dashboard, edit the event, and add a Google Drive folder link first.');
+                  return;
+                }
+                if (onNavigate) {
+                  onNavigate('photo-upload', { event: firstEvent, attendeePassId: firstEvent.passId });
+                }
               } else {
                 alert('Create an event first to upload photos.');
               }

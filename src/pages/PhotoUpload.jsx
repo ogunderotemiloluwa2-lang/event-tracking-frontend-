@@ -193,6 +193,11 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
       return;
     }
 
+    if (!event.googleDriveFolderId) {
+      setError('This event has no Google Drive folder configured. The organizer needs to add a Drive folder link in the event settings on their Dashboard.');
+      return;
+    }
+
     if (uploadingRef.current) return;
     uploadingRef.current = true;
     setUploading(true);
