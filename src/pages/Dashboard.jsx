@@ -131,18 +131,28 @@ function Dashboard({ user, onNavigate }) {
           setDriveMessage('Failed to save Google Drive connection: ' + (err.response?.data?.message || err.message));
         } finally {
           setConnectingDrive(false);
-          if (popup && !popup.closed) popup.close();
+          try {
+            if (popup && !popup.closed) popup.close();
+          } catch {
+            // Cross-origin restriction — popup.closed is inaccessible
+          }
         }
       };
 
       window.addEventListener('message', handleMessage);
 
-      // Safety: if the popup is closed without completing, stop the spinner
+      // Safety: if the popup is closed without completing, stop the spinner.
+      // Wrap in try-catch because COOP may block accessing popup.closed when
+      // the popup is at a cross-origin page (Google OAuth consent screen).
       const poll = setInterval(() => {
-        if (popup && popup.closed) {
-          clearInterval(poll);
-          window.removeEventListener('message', handleMessage);
-          setConnectingDrive(false);
+        try {
+          if (popup && popup.closed) {
+            clearInterval(poll);
+            window.removeEventListener('message', handleMessage);
+            setConnectingDrive(false);
+          }
+        } catch {
+          // Cross-origin restriction — can't check popup.closed; skip this tick
         }
       }, 800);
     } catch (err) {
