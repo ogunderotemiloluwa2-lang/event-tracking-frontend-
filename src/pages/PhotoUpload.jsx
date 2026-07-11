@@ -124,13 +124,22 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (video && canvas) {
-      // If the video hasn't loaded yet, use a fallback size
-      const width = video.videoWidth || 1280;
-      const height = video.videoHeight || 720;
+      // Ensure the video has actually loaded real frames before capturing,
+      // otherwise the canvas produces a blank/black image.
+      if (!video.videoWidth || !video.videoHeight) {
+        setError('Camera is still starting up. Please wait a moment and try again.');
+        capturingRef.current = false;
+        return;
+      }
+
+      const width = video.videoWidth;
+      const height = video.videoHeight;
       canvas.width = width;
       canvas.height = height;
       const context = canvas.getContext('2d');
       context.drawImage(video, 0, 0, width, height);
+
+      stopCamera();
 
       canvas.toBlob((blob) => {
         const reader = new FileReader();
@@ -140,9 +149,7 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
           capturingRef.current = false;
         };
         reader.readAsDataURL(blob);
-      }, 'image/jpeg', 0.9);
-
-      stopCamera();
+      }, 'image/jpeg', 0.92);
     } else {
       capturingRef.current = false;
     }

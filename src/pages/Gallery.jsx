@@ -282,22 +282,57 @@ function Gallery({ user, onNavigate }) {
         {lightboxPhoto && (
           <div className="lightbox-overlay" onClick={() => setLightboxPhoto(null)}>
             <div className="lightbox-content" onClick={e => e.stopPropagation()}>
-              <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>Close</button>
-              {lightboxPhoto.thumbnailUrl ? (
-                <img src={lightboxPhoto.downloadUrl || lightboxPhoto.thumbnailUrl} alt={lightboxPhoto.caption} className="lightbox-image" />
-              ) : (
-                <div className="lightbox-placeholder">No Preview</div>
-              )}
-              <div className="lightbox-info">
-                <h3>{lightboxPhoto.caption}</h3>
-                <p>Uploaded by {lightboxPhoto.uploader || 'Anonymous'}</p>
-                <p>{lightboxPhoto.timestamp}</p>
-                <p>{lightboxPhoto.eventTitle}</p>
-                {lightboxPhoto.downloadUrl && (
-                  <a href={lightboxPhoto.downloadUrl} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-block', marginTop: '1rem', textDecoration: 'none' }}>
-                    Download Full Size
-                  </a>
+              <button className="lightbox-close" onClick={() => setLightboxPhoto(null)} title="Close">
+                <span aria-hidden="true">✕</span>
+              </button>
+              
+              <div className="lightbox-body">
+                {lightboxPhoto.thumbnailUrl ? (
+                  <img 
+                    src={lightboxPhoto.fileId && lightboxPhoto.eventId 
+                      ? `${API_BASE}/events/${lightboxPhoto.eventId}/drive-image/${lightboxPhoto.fileId}`
+                      : lightboxPhoto.thumbnailUrl
+                    } 
+                    alt={lightboxPhoto.caption} 
+                    className="lightbox-image" 
+                  />
+                ) : (
+                  <div className="lightbox-placeholder">No Preview Available</div>
                 )}
+              </div>
+              
+              <div className="lightbox-info">
+                <div className="lightbox-info-main">
+                  <h3 className="lightbox-caption">{lightboxPhoto.caption || 'Photo'}</h3>
+                  <p className="lightbox-meta">
+                    <span className="lightbox-uploader">Captured by {lightboxPhoto.uploader || 'Anonymous'}</span>
+                    <span className="lightbox-sep">·</span>
+                    <span className="lightbox-time">{lightboxPhoto.timestamp}</span>
+                  </p>
+                  <p className="lightbox-event">{lightboxPhoto.eventTitle}</p>
+                </div>
+                <div className="lightbox-actions">
+                  {lightboxPhoto.fileId && lightboxPhoto.eventId ? (
+                    <a 
+                      href={`${API_BASE}/events/${lightboxPhoto.eventId}/drive-image/${lightboxPhoto.fileId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-primary"
+                      download
+                    >
+                      Download Photo
+                    </a>
+                  ) : lightboxPhoto.downloadUrl ? (
+                    <a 
+                      href={lightboxPhoto.downloadUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn-primary"
+                    >
+                      Open in Google Drive
+                    </a>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
