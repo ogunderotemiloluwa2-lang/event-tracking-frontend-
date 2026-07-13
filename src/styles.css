@@ -3605,8 +3605,8 @@ body {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   opacity: 0;
   transition: opacity 0.3s ease;
-  border-radiu  z-index: -1;
-s: 10px;
+  border-radius: 10px;
+  z-index: -1;
 }
 
 .nav-link:hover {
