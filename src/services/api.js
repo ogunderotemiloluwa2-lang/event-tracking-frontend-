@@ -72,8 +72,8 @@ export const resetPassword = (email, code, newPassword, confirmPassword) =>
 
 // Google Drive API (OAuth Authentication)
 export const getGoogleAuthUrl = () => api.get('/auth/google-auth-url');
-export const saveGoogleToken = (userId, accessToken, refreshToken) =>
-  api.post('/auth/save-google-token', { userId, accessToken, refreshToken });
+export const saveGoogleToken = (userId, accessToken, refreshToken, expiryDate) =>
+  api.post('/auth/save-google-token', { userId, accessToken, refreshToken, expiryDate });
 export const getGoogleDriveStatus = (userId) => api.get(`/auth/google-drive-status/${userId}`);
 
 export default api;
