@@ -63,7 +63,7 @@ function CheckIn({ event, onBack }) {
     if (!videoRef.current || !isCameraActive) return;
     
     try {
-      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
       const barcodes = await detector.detect(videoRef.current);
       
       for (const barcode of barcodes) {
