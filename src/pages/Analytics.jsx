@@ -172,7 +172,31 @@ function Analytics({ event, onBack }) {
         {/* Export Options */}
         <div className="export-section">
           <h3>Export Data</h3>
-          <button className="btn-secondary">
+          <button className="btn-secondary" onClick={() => {
+            if (!attendees || attendees.length === 0) {
+              alert('No attendee data to export.');
+              return;
+            }
+            const headers = ['Name', 'Email', 'Phone', 'Status', 'Guests', 'Dietary', 'Requests', 'Check-In Time'];
+            const rows = attendees.map(a => [
+              a.name || '',
+              a.email || '',
+              a.phone || '',
+              a.status || '',
+              a.guestCount || 1,
+              a.dietaryRestrictions || '',
+              a.specialRequests || '',
+              a.checkInTime ? new Date(a.checkInTime).toLocaleString() : ''
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `attendees-${event?.title || 'export'}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+          }}>
             📥 Download Attendee List (CSV)
           </button>
         </div>

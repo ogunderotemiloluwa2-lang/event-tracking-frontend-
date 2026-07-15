@@ -69,7 +69,7 @@ function formatTime(start, end) {
 }
 
 // Draw the pass onto a fresh canvas and return it.
-export async function renderPassCard({ event = {}, passId, attendeeName, attendeeNumber }) {
+export async function renderPassCard({ event = {}, passId, attendeeName, attendeeNumber, qrCode }) {
   const W = 800;
   const H = 1200;
   const canvas = document.createElement('canvas');
@@ -201,7 +201,7 @@ export async function renderPassCard({ event = {}, passId, attendeeName, attende
   ctx.fillText(passId || event.passId || '', 72, passY + 72);
 
   // ── QR Code ──────────────────────────────────────────────────────
-  const qrSrc = event.qrCode;
+  const qrSrc = qrCode || event.qrCode;
   const qrSize = 200;
   const qrX = (W - qrSize) / 2;
   const qrY = passY + 140;

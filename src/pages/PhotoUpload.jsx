@@ -174,8 +174,8 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
       return;
     }
 
-    if (file.size > 15 * 1024 * 1024) {
-      setError('That image is larger than 15 MB. Please choose a smaller photo.');
+    if (file.size > 10 * 1024 * 1024) {
+      setError('That image is larger than 10 MB. Please choose a smaller photo.');
       selectingRef.current = false;
       return;
     }

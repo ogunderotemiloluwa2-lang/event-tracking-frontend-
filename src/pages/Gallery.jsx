@@ -462,14 +462,17 @@ function Gallery({ user, onNavigate }) {
           <button 
             className="action-btn take-photo-btn" 
             onClick={() => {
-              if (events.length > 0) {
-                const firstEvent = events[0];
-                if (!firstEvent.googleDriveFolderId) {
+              // Use the currently filtered event, or the first event as fallback
+              const targetEvent = filterEvent !== 'all'
+                ? events.find(e => e._id === filterEvent)
+                : (events.length > 0 ? events[0] : null);
+              if (targetEvent) {
+                if (!targetEvent.googleDriveFolderId) {
                   alert('This event does not have a Google Drive folder configured. Go to your Dashboard, edit the event, and add a Google Drive folder link first.');
                   return;
                 }
                 if (onNavigate) {
-                  onNavigate('photo-upload', { event: firstEvent, attendeePassId: firstEvent.passId });
+                  onNavigate('photo-upload', { event: targetEvent, attendeePassId: targetEvent.passId });
                 }
               } else {
                 alert('Create an event first to upload photos.');

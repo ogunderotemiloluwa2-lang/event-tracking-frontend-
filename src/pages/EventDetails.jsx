@@ -8,6 +8,8 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
   const [error, setError] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [attendeePassId, setAttendeePassId] = useState(null);
+  const [attendeeQrCode, setAttendeeQrCode] = useState(null);
 
   useEffect(() => {
     loadEventDetails();
@@ -25,10 +27,16 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
       setLoading(true);
       const response = await getEventByPassId(passId);
       setEvent(response.data);
-      // Check if user already joined — compare stringified IDs to avoid ObjectId vs string mismatch
-      const userIdStr = String(user?.id || '');
-      const alreadyJoined = response.data.attendees?.some(a => String(a.userId) === userIdStr);
+      // Check if user already joined
+      const alreadyJoined = response.data.attendees?.some(a => a.userId === user?.id);
       setIsJoined(alreadyJoined);
+      // Use unique attendee passId/qrCode if returned by backend
+      if (response.data.attendeePassId) {
+        setAttendeePassId(response.data.attendeePassId);
+      }
+      if (response.data.attendeeQrCode) {
+        setAttendeeQrCode(response.data.attendeeQrCode);
+      }
     } catch (err) {
       setError('Failed to load event details. Invalid pass ID.');
       console.error('Error loading event:', err);
@@ -40,9 +48,7 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
   // Calculate the attendee's number (1-based index in the attendees array)
   const getAttendeeNumber = () => {
     if (!event?.attendees || !user?.id) return null;
-    // Compare stringified IDs to avoid ObjectId vs string mismatch
-    const userIdStr = String(user.id);
-    const idx = event.attendees.findIndex(a => String(a.userId) === userIdStr);
+    const idx = event.attendees.findIndex(a => a.userId === user.id);
     return idx >= 0 ? idx + 1 : null;
   };
 
@@ -204,13 +210,13 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
               <div className="pass-download-buttons">
                 <button
                   className="btn-primary"
-                  onClick={() => downloadPassImage({ event, passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber() })}
+                  onClick={() => downloadPassImage({ event, passId: attendeePassId || passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber(), qrCode: attendeeQrCode })}
                 >
                   Download Pass (Image)
                 </button>
                 <button
                   className="btn-secondary"
-                  onClick={() => downloadPassPdf({ event, passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber() })}
+                  onClick={() => downloadPassPdf({ event, passId: attendeePassId || passId, attendeeName: user?.name, attendeeNumber: getAttendeeNumber(), qrCode: attendeeQrCode })}
                 >
                   Download Pass (PDF)
                 </button>
@@ -218,7 +224,16 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
               {onNavigate && (
                 <button 
                   className="btn-primary"
-                  onClick={() => onNavigate('photo-upload', { event, attendeePassId: passId })}
+                  onClick={() => onNavigate('attendee-info', { event })}
+                  style={{ marginTop: '16px' }}
+                >
+                  Fill in Event Details
+                </button>
+              )}
+              {onNavigate && (
+                <button 
+                  className="btn-primary"
+                  onClick={() => onNavigate('photo-upload', { event, attendeePassId: attendeePassId || passId })}
                   style={{ marginTop: '16px' }}
                 >
                   Upload Event Photos

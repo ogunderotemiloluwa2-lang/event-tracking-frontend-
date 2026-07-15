@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { checkInAttendeeByPass } from '../services/api';
 
 function CheckIn({ event, onBack }) {
@@ -9,7 +9,20 @@ function CheckIn({ event, onBack }) {
   const [successMessage, setSuccessMessage] = useState('');
   const [checkInCount, setCheckInCount] = useState(0);
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const scanTimerRef = useRef(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [scannerSupported, setScannerSupported] = useState(true);
+
+  useEffect(() => {
+    // Check if BarcodeDetector is available
+    if (!('BarcodeDetector' in window)) {
+      setScannerSupported(false);
+    }
+    return () => {
+      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+    };
+  }, []);
 
   const handleCheckIn = async (code) => {
     if (!code.trim()) return;
@@ -45,9 +58,37 @@ function CheckIn({ event, onBack }) {
     handleCheckIn(passId);
   };
 
+  // QR scanning loop using the built-in BarcodeDetector API
+  const scanFrame = useCallback(async () => {
+    if (!videoRef.current || !isCameraActive) return;
+    
+    try {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      const barcodes = await detector.detect(videoRef.current);
+      
+      for (const barcode of barcodes) {
+        if (barcode.rawValue) {
+          // Found a QR code — stop scanning and check in
+          setIsCameraActive(false);
+          if (videoRef.current && videoRef.current.srcObject) {
+            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+          }
+          handleCheckIn(barcode.rawValue);
+          return;
+        }
+      }
+    } catch (err) {
+      // BarcodeDetector may fail on some frames — keep trying
+    }
+
+    // Schedule next scan
+    scanTimerRef.current = setTimeout(scanFrame, 500);
+  }, [isCameraActive]);
+
   const toggleCamera = async () => {
     if (isCameraActive) {
       setIsCameraActive(false);
+      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
       if (videoRef.current && videoRef.current.srcObject) {
         videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       }
@@ -57,6 +98,8 @@ function CheckIn({ event, onBack }) {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setIsCameraActive(true);
+          // Start scanning after a short delay to let the video stream initialize
+          setTimeout(() => { scanFrame(); }, 1000);
         }
       } catch (err) {
         setError('Unable to access camera. Please use manual entry.');
@@ -95,10 +138,10 @@ function CheckIn({ event, onBack }) {
                 <label>Enter Pass ID</label>
                 <input 
                   type="text" 
-                  placeholder="Enter the 8-character pass ID"
+                  placeholder="Enter the pass ID"
                   value={passId}
                   onChange={(e) => setPassId(e.target.value.toUpperCase())}
-                  maxLength="8"
+                  maxLength="64"
                   disabled={loading}
                   className="form-input large"
                   autoFocus
@@ -130,10 +173,13 @@ function CheckIn({ event, onBack }) {
                   playsInline
                   className="camera-video"
                 />
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
                 <p className="camera-hint">Point camera at QR code</p>
               </div>
             )}
-            <p className="scanner-note">Note: QR scanner requires a barcode scanning library to be fully functional</p>
+            {!scannerSupported && (
+              <p className="scanner-note">QR scanner requires a Chromium-based browser (Chrome, Edge, Samsung Internet). Use manual entry instead.</p>
+            )}
           </div>
         </div>
 

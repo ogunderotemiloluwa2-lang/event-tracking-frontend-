@@ -19,6 +19,8 @@ function AttendeeInfo({ event, user, onBack, onSubmitted }) {
       const response = await submitAttendeeInfo({
         eventId: event._id,
         userId: user.id,
+        name: user.name || 'Attendee',
+        email: user.email || '',
         rsvpStatus,
         guestCount: parseInt(guestCount),
         dietaryRestrictions,

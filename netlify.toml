@@ -1,6 +1,6 @@
-# Netlify build configuration — no build needed, pre-built files in /build
+# Netlify build configuration — builds from source (aligned with Vercel)
 [build]
-  command = "echo 'Pre-built — skipping npm install and build'"
+  command = "CI=false npm install && npm run build"
   publish = "build"
 
 # SPA fallback: serve index.html for any path (also covered by public/_redirects).
