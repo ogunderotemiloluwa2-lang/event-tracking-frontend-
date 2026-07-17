@@ -20,7 +20,7 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
   const capturingRef = useRef(false);
   const uploadingRef = useRef(false);
   const selectingRef = useRef(false);
-  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [hasMultipleCameras] = useState(true); // most phones have front + back cameras
   const [photoCaption, setPhotoCaption] = useState(() => {
     try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.photoCaption || ''; } catch { return ''; }
   });
@@ -30,14 +30,6 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
       localStorage.setItem(PHOTO_DRAFT_KEY, JSON.stringify({ photoCaption }));
     } catch { /* ignore quota errors */ }
   }, [photoCaption]);
-
-  useEffect(() => {
-    if (navigator.mediaDevices?.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices().then(devices => {
-        setHasMultipleCameras(devices.filter(d => d.kind === 'videoinput').length > 1);
-      }).catch(() => {});
-    }
-  }, []);
 
   // Callback ref — assigns the stream to the <video> the moment it mounts,
   // avoiding the timing race of waiting for a useEffect after setIsCameraActive.
