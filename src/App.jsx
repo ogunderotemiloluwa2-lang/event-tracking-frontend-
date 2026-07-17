@@ -21,9 +21,11 @@ import EventDetails from './pages/EventDetails';
 // a refresh on them falls back to a sensible home instead of crashing.
 const RESTORABLE_PAGES = new Set([
   'landing', 'login', 'register', 'forgot-password',
-  'dashboard', 'attendee', 'gallery'
+  'dashboard', 'attendee', 'gallery', 'event-details',
+  'attendee-management', 'checkin', 'reminders', 'analytics'
 ]);
-const AUTH_REQUIRED_PAGES = new Set(['dashboard', 'attendee']);
+const AUTH_REQUIRED_PAGES = new Set(['dashboard', 'attendee', 'event-details',
+  'attendee-management', 'checkin', 'reminders', 'analytics']);
 
 function App() {
   const [currentPage, setCurrentPage] = useState('landing');
@@ -68,6 +70,11 @@ function App() {
       if (AUTH_REQUIRED_PAGES.has(savedPage) && !savedUser) {
         setCurrentPage('landing');
       } else {
+        // Restore event passId for sub-pages that need it
+        const savedEventPassId = localStorage.getItem('selectedEventPassId');
+        if (savedEventPassId) {
+          setEventPassId(savedEventPassId);
+        }
         setCurrentPage(savedPage);
       }
     }
@@ -100,9 +107,13 @@ function App() {
     }
     if (page === 'event-details') {
       setEventPassId(data.passId);
+      localStorage.setItem('selectedEventPassId', data.passId || '');
     }
     if (['attendee-info', 'attendee-management', 'checkin', 'reminders', 'analytics'].includes(page)) {
       setSelectedEvent(data.event);
+      if (data.event?.passId) {
+        localStorage.setItem('selectedEventPassId', data.event.passId);
+      }
     }
     if (page === 'photo-upload') {
       setPhotoUploadData({ event: data.event, attendeePassId: data.attendeePassId });

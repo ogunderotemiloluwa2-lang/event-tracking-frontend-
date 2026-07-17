@@ -32,11 +32,7 @@ export const leaveEventByPassId = (passId) => api.post('/events/leave-by-passid'
 export const confirmAttendee = (eventId, attendeeId) => api.post(`/events/${eventId}/confirm-attendee`, { attendeeId });
 
 // Attendees API
-export const getAttendees = (eventId) => api.get(`/events/${eventId}/attendees`);
 export const getEventAttendees = (eventId) => api.get(`/attendees/event/${eventId}`);
-export const addAttendee = (eventId, data) => api.post(`/events/${eventId}/attendees`, data);
-export const updateAttendeeRSVP = (eventId, attendeeId, status) => 
-  api.put(`/events/${eventId}/attendees/${attendeeId}`, { status });
 export const submitAttendeeInfo = (data) => api.post('/attendees/info', data);
 export const updateAttendeeStatus = (attendeeId, status) => api.put(`/attendees/${attendeeId}`, { status });
 export const removeAttendee = (attendeeId) => api.delete(`/attendees/${attendeeId}`);
@@ -59,7 +55,6 @@ export const uploadPhoto = (eventId, passId, file, photoCaption, uploaderName) =
 export const getEventPhotos = (eventId) => api.get(`/events/${eventId}/photos-list`);
 
 // Email API
-export const sendEmailReminder = (eventId) => api.post(`/events/${eventId}/send-reminders`);
 export const sendEventReminders = (data) => api.post('/events/send-reminders', data);
 
 // Auth

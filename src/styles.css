@@ -7666,6 +7666,8 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
   border: 1px solid var(--ds-line-2);
   border-radius: var(--ds-radius);
   cursor: pointer; font-size: 0.9rem;
+  background: #fff;
+  color: var(--ds-ink);
   transition: border-color 0.2s var(--ds-ease), background 0.2s var(--ds-ease);
 }
 .app .radio-label:hover { border-color: var(--ds-accent); background: var(--ds-paper); }
@@ -8287,6 +8289,19 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 
 /* ---------- Reminders ---------- */
 .app .reminder-info { color: var(--ds-ink-2); margin-bottom: 1.5rem; }
+/* Ensure radio labels in reminders are always visible (override dark theme base) */
+.app .reminder-type-section .radio-label {
+  background: #fff;
+  color: var(--ds-ink);
+  border: 1px solid var(--ds-line-2);
+}
+.app .reminder-type-section .radio-label:hover {
+  border-color: var(--ds-accent);
+  background: var(--ds-paper);
+}
+.app .reminder-type-section .radio-label span {
+  color: var(--ds-ink);
+}
 .app .reminder-type-section,
 .app .reminder-preview,
 .app .custom-message-section,
