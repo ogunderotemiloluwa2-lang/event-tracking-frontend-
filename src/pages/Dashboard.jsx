@@ -602,7 +602,7 @@ function Dashboard({ user, onNavigate }) {
               </div>
             ) : (
               events.map(event => (
-                <div key={event._id} className="event-card" onClick={() => handleNavigation('attendee-management', { event })}>
+                <div key={event._id} className="event-card" onClick={() => handleNavigation('checkin', { event })}>
                   <div className="event-card-header">
                     <h3>{event.title}</h3>
                     <button className="btn-options">⋮</button>
