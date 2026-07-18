@@ -53,10 +53,11 @@ function Gallery({ user, onNavigate }) {
           const eventPhotos = photosResponse.data?.photos || [];
           
           eventPhotos.forEach((photo) => {
-            // Use the backend proxy URL so images load without Google auth issues
-            const proxyUrl = photo.fileId
+            // Always use the backend proxy URL so images load without Google auth issues.
+            // Google Drive's native thumbnailLink requires auth and will 401 in <img> tags.
+            const imageUrl = photo.fileId
               ? `${API_BASE}/events/${event._id}/drive-image/${photo.fileId}`
-              : null;
+              : photo.thumbnailUrl || null;
             allPhotos.push({
               id: photo.photoId,
               eventId: event._id,
@@ -66,7 +67,7 @@ function Gallery({ user, onNavigate }) {
               uploader: photo.uploaderName,
               fileName: photo.fileName,
               downloadUrl: photo.downloadUrl,
-              thumbnailUrl: proxyUrl || photo.thumbnailUrl,
+              thumbnailUrl: imageUrl,
               fileId: photo.fileId
             });
             if (photo.uploaderName) contributorsSet.add(photo.uploaderName);
