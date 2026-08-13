@@ -253,9 +253,9 @@ function EventDetails({ passId, user, autoJoinPassId, onAutoJoined, onBack, onNa
 
         <div className="pass-id-info">
           <p className="small-text">Pass ID: <span className="pass-code">{event.passId}</span></p>
-          {event.qrCode && (
+          {(event.qrCode || attendeeQrCode) && (
             <div className="qr-preview">
-              <img src={event.qrCode} alt="Pass QR Code" />
+              <img src={event.qrCode || attendeeQrCode} alt="Pass QR Code" />
             </div>
           )}
         </div>

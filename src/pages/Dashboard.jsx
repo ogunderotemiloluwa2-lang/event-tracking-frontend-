@@ -220,6 +220,7 @@ function Dashboard({ user, onNavigate }) {
 
   const downloadQRCode = (eventId) => {
     const qrCode = document.getElementById(`qr-${eventId}`);
+    if (!qrCode) return;
     const url = qrCode.toDataURL('image/png');
     const link = document.createElement('a');
     link.href = url;

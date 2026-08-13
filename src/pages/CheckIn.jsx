@@ -13,6 +13,8 @@ function CheckIn({ event, onBack }) {
   const scanTimerRef = useRef(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [scannerSupported, setScannerSupported] = useState(true);
+  const detectorRef = useRef(null);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     // Check if BarcodeDetector is available
@@ -21,6 +23,9 @@ function CheckIn({ event, onBack }) {
     }
     return () => {
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+      if (detectorRef.current) {
+        detectorRef.current = null;
+      }
     };
   }, []);
 
@@ -59,16 +64,17 @@ function CheckIn({ event, onBack }) {
   };
 
   // QR scanning loop using the built-in BarcodeDetector API
+  // Reuses a single BarcodeDetector instance instead of creating one per frame
   const scanFrame = useCallback(async () => {
-    if (!videoRef.current || !isCameraActive) return;
-    
+    if (!videoRef.current || !isCameraActive || !detectorRef.current) return;
+
     try {
-      const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-      const barcodes = await detector.detect(videoRef.current);
-      
+      const barcodes = await detectorRef.current.detect(videoRef.current);
+
       for (const barcode of barcodes) {
         if (barcode.rawValue) {
           // Found a QR code — stop scanning and check in
+          setScanning(false);
           setIsCameraActive(false);
           if (videoRef.current && videoRef.current.srcObject) {
             videoRef.current.srcObject.getTracks().forEach(track => track.stop());
@@ -98,7 +104,12 @@ function CheckIn({ event, onBack }) {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setIsCameraActive(true);
-          // Start scanning after a short delay to let the video stream initialize
+          setScanning(true);
+          // Create the detector once and start scanning after a short delay
+          // to let the video stream initialize
+          if (!detectorRef.current && 'BarcodeDetector' in window) {
+            detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
+          }
           setTimeout(() => { scanFrame(); }, 1000);
         }
       } catch (err) {
@@ -174,7 +185,7 @@ function CheckIn({ event, onBack }) {
                   className="camera-video"
                 />
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
-                <p className="camera-hint">Point camera at QR code</p>
+                <p className="camera-hint">{scanning ? 'Scanning for QR code...' : 'Point camera at QR code'}</p>
               </div>
             )}
             {!scannerSupported && (
