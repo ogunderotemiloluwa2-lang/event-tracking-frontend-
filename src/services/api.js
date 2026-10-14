@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -19,7 +19,14 @@ api.interceptors.request.use(config => {
 });
 
 // Events API
-export const getEvents = () => api.get('/events');
+// The list endpoint is paginated and returns { events, pagination }. Normalize
+// `data` back to a plain array so existing consumers keep working unchanged.
+export const getEvents = (params) =>
+  api.get('/events', { params }).then((res) => ({
+    ...res,
+    data: Array.isArray(res.data) ? res.data : (res.data?.events || []),
+    pagination: res.data?.pagination || null,
+  }));
 export const getEventById = (id) => api.get(`/events/${id}`);
 export const createEvent = (data) => api.post('/events', data);
 export const updateEvent = (id, data) => api.put(`/events/${id}`, data);
@@ -53,6 +60,8 @@ export const uploadPhoto = (eventId, passId, file, photoCaption, uploaderName) =
 };
 
 export const getEventPhotos = (eventId) => api.get(`/events/${eventId}/photos-list`);
+export const deleteEventPhoto = (eventId, fileId, passId) =>
+  api.delete(`/events/${eventId}/photos/${fileId}`, { data: { passId } });
 
 // Email API
 export const sendEventReminders = (data) => api.post('/events/send-reminders', data);

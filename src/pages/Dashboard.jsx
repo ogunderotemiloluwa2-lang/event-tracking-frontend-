@@ -612,7 +612,29 @@ function Dashboard({ user, onNavigate }) {
                   {/* Pass ID Section */}
                   <div className="pass-id-section">
                     <div className="pass-id-label">Pass ID for Attendees:</div>
-                    <div className="pass-id-code">{event.passId}</div>
+                    <div className="pass-id-row">
+                      <div className="pass-id-code">{event.passId}</div>
+                      <button
+                        className="btn-copy-id"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const btn = e.currentTarget;
+                          const flashCopied = () => {
+                            const orig = btn.textContent;
+                            btn.textContent = '✓ Copied!';
+                            setTimeout(() => { btn.textContent = orig; }, 2000);
+                          };
+                          if (navigator.clipboard?.writeText) {
+                            navigator.clipboard.writeText(event.passId).then(flashCopied).catch(() => window.prompt('Copy this access ID:', event.passId));
+                          } else {
+                            window.prompt('Copy this access ID:', event.passId);
+                          }
+                        }}
+                        title="Copy access ID"
+                      >
+                        Copy ID
+                      </button>
+                    </div>
                     <button
                       className="btn-share-link"
                       onClick={(e) => {

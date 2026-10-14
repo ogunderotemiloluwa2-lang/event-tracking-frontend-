@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { uploadPhoto } from '../services/api';
+import { uploadPhoto, getEventPhotos, deleteEventPhoto } from '../services/api';
 
 const PHOTO_DRAFT_KEY = 'photoUploadDraft';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1';
 
 function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
-  console.log('PhotoUpload received event:', event);
-  console.log('PhotoUpload received attendeePassId:', attendeePassId);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -21,9 +20,48 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
   const uploadingRef = useRef(false);
   const selectingRef = useRef(false);
   const [hasMultipleCameras] = useState(true); // most phones have front + back cameras
+  const [myPhotos, setMyPhotos] = useState([]);
+  const [loadingMyPhotos, setLoadingMyPhotos] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState(null);
   const [photoCaption, setPhotoCaption] = useState(() => {
     try { return JSON.parse(localStorage.getItem(PHOTO_DRAFT_KEY))?.photoCaption || ''; } catch { return ''; }
   });
+
+  // Load the photos this attendee already uploaded for this event, so they can
+  // review or delete them without leaving the page.
+  const loadMyPhotos = useCallback(async () => {
+    if (!event?._id || !attendeePassId) return;
+    setLoadingMyPhotos(true);
+    try {
+      const response = await getEventPhotos(event._id);
+      const all = response.data?.photos || [];
+      const mine = all.filter(p => (p.passId || '').toUpperCase() === attendeePassId.toUpperCase());
+      setMyPhotos(mine);
+    } catch (err) {
+      // Non-fatal — the upload flow still works if the gallery can't be listed.
+      console.warn('Could not load your photos:', err.message);
+    } finally {
+      setLoadingMyPhotos(false);
+    }
+  }, [event?._id, attendeePassId]);
+
+  useEffect(() => { loadMyPhotos(); }, [loadMyPhotos]);
+
+  const handleDeleteMyPhoto = async (photo) => {
+    if (!window.confirm('Delete this photo? This cannot be undone.')) return;
+    setDeletingPhotoId(photo.fileId);
+    setError('');
+    try {
+      await deleteEventPhoto(event._id, photo.fileId, attendeePassId);
+      setMyPhotos(prev => prev.filter(p => p.fileId !== photo.fileId));
+      setSuccessMessage('Photo deleted.');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete photo. Please try again.');
+    } finally {
+      setDeletingPhotoId(null);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -210,9 +248,6 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
       const uniqueSuffix = Math.random().toString(36).substring(2, 8);
       const file = new File([blob], `photo-${Date.now()}-${uniqueSuffix}.jpg`, { type: 'image/jpeg' });
 
-      console.log('About to upload with event._id:', event?._id);
-      console.log('Full event object:', event);
-
       const uploadResponse = await uploadPhoto(
         event._id, 
         attendeePassId, 
@@ -226,7 +261,10 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
         setCapturedImage(null);
         setPhotoCaption('');
         try { localStorage.removeItem(PHOTO_DRAFT_KEY); } catch { /* ignore */ }
-        
+
+        // Refresh the "your photos" strip so the new upload appears immediately.
+        loadMyPhotos();
+
         if (onUploadSuccess) {
           onUploadSuccess(uploadResponse.data);
         }
@@ -389,6 +427,45 @@ function PhotoUpload({ event, attendeePassId, user, onUploadSuccess, onBack }) {
       </div>
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      {attendeePassId && (
+        <section className="my-photos-section">
+          <div className="my-photos-header">
+            <h3>Your Photos</h3>
+            <button className="btn-refresh-photos" onClick={loadMyPhotos} disabled={loadingMyPhotos}>
+              {loadingMyPhotos ? 'Loading...' : 'Refresh'}
+            </button>
+          </div>
+
+          {myPhotos.length === 0 ? (
+            <p className="my-photos-empty">
+              {loadingMyPhotos ? 'Loading your photos...' : 'You have not uploaded any photos for this event yet.'}
+            </p>
+          ) : (
+            <div className="my-photos-grid">
+              {myPhotos.map(photo => (
+                <figure key={photo.fileId} className="my-photo-card">
+                  <img
+                    src={`${API_BASE}/events/${event._id}/drive-image/${photo.fileId}`}
+                    alt={photo.photoCaption || photo.fileName}
+                    loading="lazy"
+                  />
+                  <figcaption>
+                    <span className="my-photo-caption">{photo.photoCaption || photo.fileName}</span>
+                    <button
+                      className="btn-delete-my-photo"
+                      onClick={() => handleDeleteMyPhoto(photo)}
+                      disabled={deletingPhotoId === photo.fileId}
+                    >
+                      {deletingPhotoId === photo.fileId ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

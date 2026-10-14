@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import jsQR from 'jsqr';
 import { checkInAttendeeByPass } from '../services/api';
 
 function CheckIn({ event, onBack }) {
@@ -12,20 +13,17 @@ function CheckIn({ event, onBack }) {
   const canvasRef = useRef(null);
   const scanTimerRef = useRef(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [scannerSupported, setScannerSupported] = useState(true);
   const detectorRef = useRef(null);
   const [scanning, setScanning] = useState(false);
+  // Refs mirror state so the scan loop never reads a stale closure value.
+  const cameraActiveRef = useRef(false);
+  const scanningRef = useRef(false);
+  const handleCheckInRef = useRef(null);
 
   useEffect(() => {
-    // Check if BarcodeDetector is available
-    if (!('BarcodeDetector' in window)) {
-      setScannerSupported(false);
-    }
     return () => {
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-      if (detectorRef.current) {
-        detectorRef.current = null;
-      }
+      detectorRef.current = null;
     };
   }, []);
 
@@ -58,61 +56,116 @@ function CheckIn({ event, onBack }) {
     }
   };
 
+  handleCheckInRef.current = handleCheckIn;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     handleCheckIn(passId);
   };
 
-  // QR scanning loop using the built-in BarcodeDetector API
-  // Reuses a single BarcodeDetector instance instead of creating one per frame
+  const stopCamera = useCallback(() => {
+    cameraActiveRef.current = false;
+    scanningRef.current = false;
+    setIsCameraActive(false);
+    setScanning(false);
+    if (scanTimerRef.current) {
+      clearTimeout(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  // QR scanning loop. Uses the native BarcodeDetector when available and falls
+  // back to jsQR (canvas pixel decoding) everywhere else, so the scanner works
+  // in Safari/Firefox too.
   const scanFrame = useCallback(async () => {
-    if (!videoRef.current || !isCameraActive || !detectorRef.current) return;
+    const video = videoRef.current;
+    if (!cameraActiveRef.current || !scanningRef.current || !video) return;
+
+    let decoded = null;
 
     try {
-      const barcodes = await detectorRef.current.detect(videoRef.current);
-
-      for (const barcode of barcodes) {
-        if (barcode.rawValue) {
-          // Found a QR code — stop scanning and check in
-          setScanning(false);
-          setIsCameraActive(false);
-          if (videoRef.current && videoRef.current.srcObject) {
-            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-          }
-          handleCheckIn(barcode.rawValue);
-          return;
+      if (detectorRef.current) {
+        const barcodes = await detectorRef.current.detect(video);
+        const hit = barcodes.find(b => b.rawValue);
+        if (hit) decoded = hit.rawValue;
+      } else if (video.videoWidth && video.videoHeight) {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const result = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert'
+          });
+          if (result && result.data) decoded = result.data;
         }
       }
     } catch (err) {
-      // BarcodeDetector may fail on some frames — keep trying
+      // Decoding can fail on individual frames — keep scanning.
     }
 
-    // Schedule next scan
-    scanTimerRef.current = setTimeout(scanFrame, 500);
-  }, [isCameraActive]);
+    if (decoded) {
+      stopCamera();
+      handleCheckInRef.current?.(decoded);
+      return;
+    }
+
+    scanTimerRef.current = setTimeout(scanFrame, 400);
+  }, [stopCamera]);
 
   const toggleCamera = async () => {
-    if (isCameraActive) {
-      setIsCameraActive(false);
-      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-      if (videoRef.current && videoRef.current.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    if (cameraActiveRef.current) {
+      stopCamera();
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError('Your browser cannot open the camera here. This usually means the page is not on a secure (https) link. Use manual entry instead.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+
+      if (!videoRef.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
       }
-    } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setIsCameraActive(true);
-          setScanning(true);
-          // Create the detector once and start scanning after a short delay
-          // to let the video stream initialize
-          if (!detectorRef.current && 'BarcodeDetector' in window) {
-            detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
-          }
-          setTimeout(() => { scanFrame(); }, 1000);
+
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play?.().catch(() => {});
+
+      // Create the detector once (if the browser has it) before scanning starts.
+      if (!detectorRef.current && 'BarcodeDetector' in window) {
+        try {
+          detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
+        } catch {
+          detectorRef.current = null; // fall back to jsQR
         }
-      } catch (err) {
+      }
+
+      cameraActiveRef.current = true;
+      scanningRef.current = true;
+      setIsCameraActive(true);
+      setScanning(true);
+      setError('');
+
+      // Give the video a moment to produce real frames before decoding.
+      scanTimerRef.current = setTimeout(scanFrame, 600);
+    } catch (err) {
+      if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+        setError('Camera permission was blocked. Allow camera access for this site in your browser settings, then try again.');
+      } else if (err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
+        setError('No camera was found on this device. Use manual entry instead.');
+      } else {
         setError('Unable to access camera. Please use manual entry.');
       }
     }
@@ -182,14 +235,15 @@ function CheckIn({ event, onBack }) {
                   ref={videoRef} 
                   autoPlay 
                   playsInline
+                  muted
                   className="camera-video"
                 />
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
                 <p className="camera-hint">{scanning ? 'Scanning for QR code...' : 'Point camera at QR code'}</p>
               </div>
             )}
-            {!scannerSupported && (
-              <p className="scanner-note">QR scanner requires a Chromium-based browser (Chrome, Edge, Samsung Internet). Use manual entry instead.</p>
+            {!('BarcodeDetector' in window) && (
+              <p className="scanner-note">Using the built-in QR decoder. For faster scanning, use Chrome, Edge or Samsung Internet.</p>
             )}
           </div>
         </div>

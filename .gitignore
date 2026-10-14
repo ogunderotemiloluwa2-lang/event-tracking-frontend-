@@ -3,9 +3,9 @@ node_modules/
 
 # Production / build output
 dist/
+build/
 
 # Local env overrides (keep secrets/local-only out of git)
-# Note: .env.production IS committed (public API URL, needed for the Netlify build).
 .env
 .env.local
 .env.development.local

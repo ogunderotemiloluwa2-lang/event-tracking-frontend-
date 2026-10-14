@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getEvents, getEventPhotos, deleteEvent, getOrganizerEvents, getUserEvents } from '../services/api';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1';
 
 function Gallery({ user, onNavigate }) {
   const [filterEvent, setFilterEvent] = useState('all');
