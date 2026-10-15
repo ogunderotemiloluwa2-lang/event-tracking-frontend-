@@ -8303,6 +8303,16 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 .app .camera-video { width: 100%; border-radius: 10px; border: 1px solid var(--ds-line); }
 .app .camera-hint, .app .scanner-note { font-size: 0.78rem; color: var(--ds-ink-3); margin-top: 0.6rem; text-align: center; }
 .app .checkin-result { background: #fff; border: 1px solid var(--ds-line); border-radius: 14px; padding: 1.5rem; margin-top: 1.5rem; text-align: center; }
+.app .attendee-checkin-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 320px; overflow-y: auto; }
+.app .attendee-checkin-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--ds-line-2); }
+.app .attendee-checkin-row:last-child { border-bottom: none; }
+.app .attendee-info { flex: 1; min-width: 0; }
+.app .attendee-name { font-weight: 600; color: var(--ds-ink); display: block; }
+.app .attendee-email { font-size: 0.8rem; color: var(--ds-ink-3); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app .btn-checkin-attendee { padding: 0.4rem 1rem; font-size: 0.85rem; border: none; border-radius: 6px; background: var(--ds-accent); color: #fff; cursor: pointer; white-space: nowrap; margin-left: 0.5rem; }
+.app .btn-checkin-attendee:hover:not(:disabled) { background: var(--ds-accent-hover); }
+.app .btn-checkin-attendee:disabled { background: var(--ds-ink-3); cursor: not-allowed; }
+.app .loading-hint { color: var(--ds-ink-3); font-size: 0.9rem; text-align: center; padding: 1rem 0; }
 
 /* ---------- Reminders ---------- */
 .app .reminder-info { color: var(--ds-ink-2); margin-bottom: 1.5rem; }

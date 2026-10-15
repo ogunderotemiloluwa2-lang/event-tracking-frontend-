@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import jsQR from 'jsqr';
-import { checkInAttendeeByPass } from '../services/api';
+import { checkInAttendeeByPass, getEventAttendees } from '../services/api';
 
 function CheckIn({ event, onBack }) {
   const [passId, setPassId] = useState('');
@@ -9,6 +9,8 @@ function CheckIn({ event, onBack }) {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [checkInCount, setCheckInCount] = useState(0);
+  const [attendees, setAttendees] = useState([]);
+  const [attendeesLoading, setAttendeesLoading] = useState(true);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const scanTimerRef = useRef(null);
@@ -26,6 +28,21 @@ function CheckIn({ event, onBack }) {
       detectorRef.current = null;
     };
   }, []);
+
+  // Load attendees for this event so the organizer can check in with one click.
+  useEffect(() => {
+    const loadAttendees = async () => {
+      try {
+        const res = await getEventAttendees(event._id);
+        setAttendees(res.data || []);
+      } catch (err) {
+        setAttendees([]);
+      } finally {
+        setAttendeesLoading(false);
+      }
+    };
+    loadAttendees();
+  }, [event._id]);
 
   const handleCheckIn = async (code) => {
     if (!code.trim()) return;
@@ -215,6 +232,36 @@ function CheckIn({ event, onBack }) {
                 {loading ? 'Checking in...' : 'Check In'}
               </button>
             </form>
+          </div>
+
+          <div className="method-divider">OR</div>
+
+          <div className="method-section">
+            <h3>Attendee List</h3>
+            {attendeesLoading ? (
+              <p className="loading-hint">Loading attendees...</p>
+            ) : attendees.length === 0 ? (
+              <p className="loading-hint">No attendees have joined yet.</p>
+            ) : (
+              <div className="attendee-checkin-list">
+                {attendees.map(attendee => (
+                  <div key={attendee._id} className="attendee-checkin-row">
+                    <div className="attendee-info">
+                      <span className="attendee-name">{attendee.name || 'Attendee'}</span>
+                      {attendee.email && <span className="attendee-email">{attendee.email}</span>}
+                    </div>
+                    <button
+                      className="btn-checkin-attendee"
+                      onClick={() => handleCheckIn(attendee.passId)}
+                      disabled={loading || !attendee.passId}
+                      title={attendee.passId ? `Check in ${attendee.name || 'this attendee'}` : 'No pass ID available'}
+                    >
+                      Check In
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="method-divider">OR</div>
