@@ -132,6 +132,7 @@ function AttendeeManagement({ event, onBack }) {
                   <th>Guests</th>
                   <th>Dietary Restrictions</th>
                   <th>Status</th>
+                  <th>Attendee Pass ID</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -154,6 +155,25 @@ function AttendeeManagement({ event, onBack }) {
                         <option value="maybe">Maybe</option>
                         <option value="no">Declined</option>
                       </select>
+                    </td>
+                    <td className="passid-cell">
+                      {attendee.passId ? (
+                        <>
+                          <code className="attendee-passid">{attendee.passId}</code>
+                          <button
+                            className="btn-copy-passid"
+                            onClick={() => {
+                              navigator.clipboard.writeText(attendee.passId)
+                                .catch(() => window.prompt('Copy attendee pass ID:', attendee.passId));
+                            }}
+                            title="Copy this attendee's pass ID for check-in"
+                          >
+                            Copy
+                          </button>
+                        </>
+                      ) : (
+                        <span className="no-passid">—</span>
+                      )}
                     </td>
                     <td>
                       <button 

@@ -7670,6 +7670,8 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 .app .attendees-table .name-cell { color: var(--ds-ink); }
 .app .attendees-table .dietary { color: var(--ds-ink-2); }
 .app .attendees-table .status-select { color: var(--ds-ink); background: #fff; border-color: var(--ds-line-2); }
+.app .attendees-table .passid-cell code.attendee-passid { color: var(--ds-ink); background: var(--ds-paper-2); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+.app .attendees-table .btn-copy-passid { margin-left: 0.5rem; padding: 0.2rem 0.6rem; font-size: 0.8rem; }
 
 /* ---------- Radio / checkbox rows ---------- */
 .app .radio-label {

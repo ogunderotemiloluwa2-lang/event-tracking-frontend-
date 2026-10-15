@@ -199,10 +199,10 @@ function CheckIn({ event, onBack }) {
             <h3>Manual Entry</h3>
             <form onSubmit={handleSubmit} className="checkin-form">
               <div className="form-field">
-                <label>Enter Pass ID</label>
+                <label>Enter Attendee Pass ID</label>
                 <input 
                   type="text" 
-                  placeholder="Enter the pass ID"
+                  placeholder="Enter the attendee's pass ID"
                   value={passId}
                   onChange={(e) => setPassId(e.target.value.toUpperCase())}
                   maxLength="64"
