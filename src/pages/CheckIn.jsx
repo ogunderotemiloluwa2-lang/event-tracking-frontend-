@@ -9,6 +9,7 @@ function CheckIn({ event, onBack }) {
   const [checkInCount, setCheckInCount] = useState(0);
   const [attendees, setAttendees] = useState([]);
   const [attendeesLoading, setAttendeesLoading] = useState(true);
+  const [checkedInIds, setCheckedInIds] = useState(new Set());
 
   // Load attendees for this event so the organizer can check in with one click.
   useEffect(() => {
@@ -25,20 +26,21 @@ function CheckIn({ event, onBack }) {
     loadAttendees();
   }, [event._id]);
 
-  const handleCheckIn = async (code) => {
-    if (!code.trim()) return;
+  const handleCheckIn = async (attendee) => {
+    if (!attendee.passId) return;
 
     setLoading(true);
     setError('');
     setSuccessMessage('');
 
     try {
-      const response = await checkInAttendeeByPass(event._id, code.toUpperCase());
+      const response = await checkInAttendeeByPass(event._id, attendee.passId.toUpperCase());
       
       if (response.data) {
         setCheckedInAttendee(response.data);
         setSuccessMessage(`✓ Welcome ${response.data.name}!`);
         setCheckInCount(prev => prev + 1);
+        setCheckedInIds(prev => new Set([...prev, attendee._id]));
 
         setTimeout(() => {
           setCheckedInAttendee(null);
@@ -84,7 +86,9 @@ function CheckIn({ event, onBack }) {
               <p className="loading-hint">No attendees have joined yet.</p>
             ) : (
               <div className="attendee-checkin-list">
-                {attendees.map(attendee => (
+                {attendees.map(attendee => {
+                  const isCheckedIn = checkedInIds.has(attendee._id) || attendee.status === 'checked-in';
+                  return (
                   <div key={attendee._id} className="attendee-checkin-row">
                     <div className="attendee-info">
                       <span className="attendee-name">{attendee.name || 'Attendee'}</span>
@@ -92,14 +96,15 @@ function CheckIn({ event, onBack }) {
                     </div>
                     <button
                       className="btn-checkin-attendee"
-                      onClick={() => handleCheckIn(attendee.passId)}
-                      disabled={loading || !attendee.passId}
-                      title={attendee.passId ? `Check in ${attendee.name || 'this attendee'}` : 'No pass ID available'}
+                      onClick={() => handleCheckIn(attendee)}
+                      disabled={loading || !attendee.passId || isCheckedIn}
+                      title={isCheckedIn ? 'Already checked in' : (attendee.passId ? `Check in ${attendee.name || 'this attendee'}` : 'No pass ID available')}
                     >
-                      Check In
+                      {isCheckedIn ? '✓ Checked In' : 'Check In'}
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
