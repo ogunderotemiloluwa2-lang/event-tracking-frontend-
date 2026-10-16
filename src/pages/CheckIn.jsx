@@ -3,7 +3,6 @@ import jsQR from 'jsqr';
 import { checkInAttendeeByPass, getEventAttendees } from '../services/api';
 
 function CheckIn({ event, onBack }) {
-  const [passId, setPassId] = useState('');
   const [checkedInAttendee, setCheckedInAttendee] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,7 +57,6 @@ function CheckIn({ event, onBack }) {
         setCheckedInAttendee(response.data);
         setSuccessMessage(`✓ Welcome ${response.data.name}!`);
         setCheckInCount(prev => prev + 1);
-        setPassId('');
 
         setTimeout(() => {
           setCheckedInAttendee(null);
@@ -66,19 +64,13 @@ function CheckIn({ event, onBack }) {
         }, 3000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid pass ID. Please try again.');
-      setPassId('');
+      setError(err.response?.data?.message || 'Check-in failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   handleCheckInRef.current = handleCheckIn;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleCheckIn(passId);
-  };
 
   const stopCamera = useCallback(() => {
     cameraActiveRef.current = false;
@@ -212,30 +204,6 @@ function CheckIn({ event, onBack }) {
         {error && <div className="error-message">{error}</div>}
 
         <div className="checkin-methods">
-          <div className="method-section">
-            <h3>Manual Entry</h3>
-            <form onSubmit={handleSubmit} className="checkin-form">
-              <div className="form-field">
-                <label>Enter Attendee Pass ID</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter the attendee's pass ID"
-                  value={passId}
-                  onChange={(e) => setPassId(e.target.value.toUpperCase())}
-                  maxLength="64"
-                  disabled={loading}
-                  className="form-input large"
-                  autoFocus
-                />
-              </div>
-              <button type="submit" className="btn-primary btn-large" disabled={loading}>
-                {loading ? 'Checking in...' : 'Check In'}
-              </button>
-            </form>
-          </div>
-
-          <div className="method-divider">OR</div>
-
           <div className="method-section">
             <h3>Attendee List</h3>
             {attendeesLoading ? (
