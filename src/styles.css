@@ -7328,6 +7328,7 @@ body {
   --ds-line: #e4ded4;
   --ds-line-2: #d4ccbf;
   --ds-accent: #b45309;
+  --ds-accent-hover: #9a4308;
   --ds-radius: 6px;
   --ds-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }

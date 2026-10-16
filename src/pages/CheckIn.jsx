@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import jsQR from 'jsqr';
+import React, { useState, useEffect } from 'react';
 import { checkInAttendeeByPass, getEventAttendees } from '../services/api';
 
 function CheckIn({ event, onBack }) {
@@ -10,23 +9,6 @@ function CheckIn({ event, onBack }) {
   const [checkInCount, setCheckInCount] = useState(0);
   const [attendees, setAttendees] = useState([]);
   const [attendeesLoading, setAttendeesLoading] = useState(true);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const scanTimerRef = useRef(null);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const detectorRef = useRef(null);
-  const [scanning, setScanning] = useState(false);
-  // Refs mirror state so the scan loop never reads a stale closure value.
-  const cameraActiveRef = useRef(false);
-  const scanningRef = useRef(false);
-  const handleCheckInRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-      detectorRef.current = null;
-    };
-  }, []);
 
   // Load attendees for this event so the organizer can check in with one click.
   useEffect(() => {
@@ -67,116 +49,6 @@ function CheckIn({ event, onBack }) {
       setError(err.response?.data?.message || 'Check-in failed. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  handleCheckInRef.current = handleCheckIn;
-
-  const stopCamera = useCallback(() => {
-    cameraActiveRef.current = false;
-    scanningRef.current = false;
-    setIsCameraActive(false);
-    setScanning(false);
-    if (scanTimerRef.current) {
-      clearTimeout(scanTimerRef.current);
-      scanTimerRef.current = null;
-    }
-    if (videoRef.current && videoRef.current.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-  }, []);
-
-  // QR scanning loop. Uses the native BarcodeDetector when available and falls
-  // back to jsQR (canvas pixel decoding) everywhere else, so the scanner works
-  // in Safari/Firefox too.
-  const scanFrame = useCallback(async () => {
-    const video = videoRef.current;
-    if (!cameraActiveRef.current || !scanningRef.current || !video) return;
-
-    let decoded = null;
-
-    try {
-      if (detectorRef.current) {
-        const barcodes = await detectorRef.current.detect(video);
-        const hit = barcodes.find(b => b.rawValue);
-        if (hit) decoded = hit.rawValue;
-      } else if (video.videoWidth && video.videoHeight) {
-        const canvas = canvasRef.current;
-        if (canvas) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const result = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert'
-          });
-          if (result && result.data) decoded = result.data;
-        }
-      }
-    } catch (err) {
-      // Decoding can fail on individual frames — keep scanning.
-    }
-
-    if (decoded) {
-      stopCamera();
-      handleCheckInRef.current?.(decoded);
-      return;
-    }
-
-    scanTimerRef.current = setTimeout(scanFrame, 400);
-  }, [stopCamera]);
-
-  const toggleCamera = async () => {
-    if (cameraActiveRef.current) {
-      stopCamera();
-      return;
-    }
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setError('Your browser cannot open the camera here. This usually means the page is not on a secure (https) link. Use manual entry instead.');
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-
-      if (!videoRef.current) {
-        stream.getTracks().forEach(track => track.stop());
-        return;
-      }
-
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play?.().catch(() => {});
-
-      // Create the detector once (if the browser has it) before scanning starts.
-      if (!detectorRef.current && 'BarcodeDetector' in window) {
-        try {
-          detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
-        } catch {
-          detectorRef.current = null; // fall back to jsQR
-        }
-      }
-
-      cameraActiveRef.current = true;
-      scanningRef.current = true;
-      setIsCameraActive(true);
-      setScanning(true);
-      setError('');
-
-      // Give the video a moment to produce real frames before decoding.
-      scanTimerRef.current = setTimeout(scanFrame, 600);
-    } catch (err) {
-      if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
-        setError('Camera permission was blocked. Allow camera access for this site in your browser settings, then try again.');
-      } else if (err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
-        setError('No camera was found on this device. Use manual entry instead.');
-      } else {
-        setError('Unable to access camera. Please use manual entry.');
-      }
     }
   };
 
@@ -229,36 +101,6 @@ function CheckIn({ event, onBack }) {
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-
-          <div className="method-divider">OR</div>
-
-          <div className="method-section">
-            <h3>QR Code Scanner</h3>
-            <button 
-              type="button"
-              className={`btn-secondary btn-large ${isCameraActive ? 'active' : ''}`}
-              onClick={toggleCamera}
-            >
-              {isCameraActive ? '📹 Stop Camera' : '📱 Scan QR Code'}
-            </button>
-            
-            {isCameraActive && (
-              <div className="camera-container">
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  playsInline
-                  muted
-                  className="camera-video"
-                />
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
-                <p className="camera-hint">{scanning ? 'Scanning for QR code...' : 'Point camera at QR code'}</p>
-              </div>
-            )}
-            {!('BarcodeDetector' in window) && (
-              <p className="scanner-note">Using the built-in QR decoder. For faster scanning, use Chrome, Edge or Samsung Internet.</p>
             )}
           </div>
         </div>
