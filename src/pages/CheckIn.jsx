@@ -48,7 +48,20 @@ function CheckIn({ event, onBack }) {
         }, 3000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Check-in failed. Please try again.');
+      // If already checked in, treat as success (counter still increments)
+      if (err.response?.status === 400 && err.response?.data?.attendee) {
+        const attendeeData = err.response.data.attendee;
+        setCheckedInAttendee(attendeeData);
+        setSuccessMessage(`✓ ${attendeeData.name} already checked in!`);
+        setCheckInCount(prev => prev + 1);
+        setCheckedInIds(prev => new Set([...prev, attendee._id]));
+        setTimeout(() => {
+          setCheckedInAttendee(null);
+          setSuccessMessage('');
+        }, 3000);
+      } else {
+        setError(err.response?.data?.message || 'Check-in failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
