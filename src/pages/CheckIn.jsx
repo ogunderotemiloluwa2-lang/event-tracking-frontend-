@@ -43,12 +43,13 @@ function CheckIn({ event, onBack }) {
 
     try {
       const response = await checkInAttendeeByPass(event._id, attendee.passId.toUpperCase());
-      
-      if (response.data) {
-        const data = response.data;
+
+      // The endpoint responds with { message, attendee, alreadyCheckedIn? }.
+      const data = response.data?.attendee || response.data;
+      if (data) {
         setCheckedInAttendee(data);
         setSuccessMessage(
-          data.alreadyCheckedIn
+          response.data?.alreadyCheckedIn
             ? `✓ ${data.name} already checked in!`
             : `✓ Welcome ${data.name}!`
         );
