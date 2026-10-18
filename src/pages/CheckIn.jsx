@@ -6,10 +6,8 @@ function CheckIn({ event, onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [checkInCount, setCheckInCount] = useState(0);
   const [attendees, setAttendees] = useState([]);
   const [attendeesLoading, setAttendeesLoading] = useState(true);
-  const [checkedInIds, setCheckedInIds] = useState(new Set());
 
   // Load attendees for this event so the organizer can check in with one click.
   useEffect(() => {
@@ -26,6 +24,16 @@ function CheckIn({ event, onBack }) {
     loadAttendees();
   }, [event._id]);
 
+  // The counter is derived from the attendee list so it always reflects the
+  // real number of checked-in guests, including on page reload.
+  const checkInCount = attendees.filter(a => a.status === 'checked-in').length;
+
+  const markCheckedIn = (attendeeId) => {
+    setAttendees(prev =>
+      prev.map(a => (a._id === attendeeId ? { ...a, status: 'checked-in' } : a))
+    );
+  };
+
   const handleCheckIn = async (attendee) => {
     if (!attendee.passId) return;
 
@@ -37,10 +45,14 @@ function CheckIn({ event, onBack }) {
       const response = await checkInAttendeeByPass(event._id, attendee.passId.toUpperCase());
       
       if (response.data) {
-        setCheckedInAttendee(response.data);
-        setSuccessMessage(`✓ Welcome ${response.data.name}!`);
-        setCheckInCount(prev => prev + 1);
-        setCheckedInIds(prev => new Set([...prev, attendee._id]));
+        const data = response.data;
+        setCheckedInAttendee(data);
+        setSuccessMessage(
+          data.alreadyCheckedIn
+            ? `✓ ${data.name} already checked in!`
+            : `✓ Welcome ${data.name}!`
+        );
+        markCheckedIn(attendee._id);
 
         setTimeout(() => {
           setCheckedInAttendee(null);
@@ -48,20 +60,7 @@ function CheckIn({ event, onBack }) {
         }, 3000);
       }
     } catch (err) {
-      // If already checked in, treat as success (counter still increments)
-      if (err.response?.status === 400 && err.response?.data?.attendee) {
-        const attendeeData = err.response.data.attendee;
-        setCheckedInAttendee(attendeeData);
-        setSuccessMessage(`✓ ${attendeeData.name} already checked in!`);
-        setCheckInCount(prev => prev + 1);
-        setCheckedInIds(prev => new Set([...prev, attendee._id]));
-        setTimeout(() => {
-          setCheckedInAttendee(null);
-          setSuccessMessage('');
-        }, 3000);
-      } else {
-        setError(err.response?.data?.message || 'Check-in failed. Please try again.');
-      }
+      setError(err.response?.data?.message || 'Check-in failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -100,7 +99,7 @@ function CheckIn({ event, onBack }) {
             ) : (
               <div className="attendee-checkin-list">
                 {attendees.map(attendee => {
-                  const isCheckedIn = checkedInIds.has(attendee._id) || attendee.status === 'checked-in';
+                  const isCheckedIn = attendee.status === 'checked-in';
                   return (
                   <div key={attendee._id} className="attendee-checkin-row">
                     <div className="attendee-info">
@@ -108,7 +107,7 @@ function CheckIn({ event, onBack }) {
                       {attendee.email && <span className="attendee-email">{attendee.email}</span>}
                     </div>
                     <button
-                      className="btn-checkin-attendee"
+                      className={`btn-checkin-attendee${isCheckedIn ? ' is-checked-in' : ''}`}
                       onClick={() => handleCheckIn(attendee)}
                       disabled={loading || !attendee.passId || isCheckedIn}
                       title={isCheckedIn ? 'Already checked in' : (attendee.passId ? `Check in ${attendee.name || 'this attendee'}` : 'No pass ID available')}

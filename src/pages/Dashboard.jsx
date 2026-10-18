@@ -52,6 +52,7 @@ function Dashboard({ user, onNavigate }) {
   const [formError, setFormError] = useState('');
   const [stats, setStats] = useState({ total: 0, confirmed: 0, photos: 0 });
   const [driveConnected, setDriveConnected] = useState(false);
+  const [driveStatusLoaded, setDriveStatusLoaded] = useState(false);
   const [connectingDrive, setConnectingDrive] = useState(false);
   const [driveMessage, setDriveMessage] = useState('');
 
@@ -92,6 +93,8 @@ function Dashboard({ user, onNavigate }) {
       setDriveConnected(!!res.data?.hasGoogleDrive);
     } catch (err) {
       console.warn('Could not check Google Drive status:', err.message);
+    } finally {
+      setDriveStatusLoaded(true);
     }
   };
 
@@ -318,11 +321,13 @@ function Dashboard({ user, onNavigate }) {
             <p className="organization">{user?.organization}</p>
             <p className="email">{user?.email}</p>
             <p className="cloud-status">
-              {driveConnected
-                ? 'Google Drive connected — guest photos upload to your Drive'
-                : 'Google Drive not connected — connect it so guest photos can be saved'}
+              {!driveStatusLoaded
+                ? 'Checking Google Drive connection…'
+                : driveConnected
+                  ? 'Google Drive connected — guest photos upload to your Drive'
+                  : 'Google Drive not connected — connect it so guest photos can be saved'}
             </p>
-            {!driveConnected && (
+            {driveStatusLoaded && !driveConnected && (
               <>
                 <button
                   className="btn-primary"

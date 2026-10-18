@@ -8310,10 +8310,10 @@ body { background: var(--ds-paper); color: var(--ds-ink); }
 .app .attendee-info { flex: 1; min-width: 0; }
 .app .attendee-name { font-weight: 600; color: var(--ds-ink); display: block; }
 .app .attendee-email { font-size: 0.8rem; color: var(--ds-ink-3); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app .btn-checkin-attendee { padding: 0.4rem 1rem; font-size: 0.85rem; border: none; border-radius: 6px; background: var(--ds-accent); color: #fff; cursor: pointer; white-space: nowrap; margin-left: 0.5rem; }
-.app .btn-checkin-attendee:hover:not(:disabled) { background: var(--ds-accent-hover); }
-.app .btn-checkin-attendee:disabled { background: var(--ds-ink-3); cursor: not-allowed; }
-.app .btn-checkin-attendee:checked-in { background: var(--ds-accent); cursor: default; }
+.app .btn-checkin-attendee { padding: 0.4rem 1rem; font-size: 0.85rem; border: none; border-radius: 6px; background: var(--ds-accent); color: #fff; cursor: pointer; white-space: nowrap; margin-left: 0.5rem; transition: background 0.2s var(--ds-ease); }
+.app .btn-checkin-attendee:hover:not(:disabled) { background: var(--ds-accent-hover); color: #fff; }
+.app .btn-checkin-attendee:disabled { background: var(--ds-ink-3); color: #fff; cursor: not-allowed; }
+.app .btn-checkin-attendee.is-checked-in { background: #047857; color: #fff; cursor: default; }
 .app .loading-hint { color: var(--ds-ink-3); font-size: 0.9rem; text-align: center; padding: 1rem 0; }
 
 /* ---------- Reminders ---------- */
